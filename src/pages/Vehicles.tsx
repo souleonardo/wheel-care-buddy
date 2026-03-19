@@ -1,5 +1,6 @@
+import { useFleet } from "@/context/FleetContext";
 import { MobileLayout } from "@/components/MobileLayout";
-import { vehicles } from "@/data/mockData";
+import { AddVehicleDialog } from "@/components/AddVehicleDialog";
 import { Car, User, Calendar } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -10,21 +11,29 @@ const statusConfig = {
 };
 
 export default function Vehicles() {
+  const { vehicles } = useFleet();
+
   return (
     <MobileLayout title="Veículos">
       <div className="p-4 space-y-4">
-        {/* Summary */}
-        <div className="flex gap-2">
-          {(["available", "rented", "maintenance"] as const).map((status) => {
-            const count = vehicles.filter((v) => v.status === status).length;
-            const config = statusConfig[status];
-            return (
-              <div key={status} className={cn("flex-1 rounded-lg px-3 py-2 text-center", config.class)}>
-                <p className="text-lg font-bold">{count}</p>
-                <p className="text-[10px] font-medium">{config.label}</p>
-              </div>
-            );
-          })}
+        {/* Header with Add */}
+        <div className="flex items-center justify-between">
+          <div className="flex gap-2 flex-1">
+            {(["available", "rented", "maintenance"] as const).map((status) => {
+              const count = vehicles.filter((v) => v.status === status).length;
+              const config = statusConfig[status];
+              return (
+                <div key={status} className={cn("flex-1 rounded-lg px-3 py-2 text-center", config.class)}>
+                  <p className="text-lg font-bold">{count}</p>
+                  <p className="text-[10px] font-medium">{config.label}</p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="flex justify-end">
+          <AddVehicleDialog />
         </div>
 
         {/* Vehicle List */}
@@ -42,7 +51,6 @@ export default function Vehicles() {
                     {config.label}
                   </span>
                 </div>
-
                 <div className="flex items-center gap-4 text-xs text-muted-foreground">
                   <div className="flex items-center gap-1.5">
                     <Car className="h-3.5 w-3.5" />

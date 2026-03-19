@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { MobileLayout } from "@/components/MobileLayout";
-import { payments } from "@/data/mockData";
+import { useFleet } from "@/context/FleetContext";
 import { cn } from "@/lib/utils";
+import { CheckCircle2 } from "lucide-react";
 
 const statusConfig = {
   paid: { label: "Pago", class: "bg-success/15 text-success", dotClass: "bg-success" },
@@ -12,17 +13,16 @@ const statusConfig = {
 type FilterStatus = "all" | "paid" | "pending" | "overdue";
 
 export default function Payments() {
+  const { payments, markPaymentPaid } = useFleet();
   const [filter, setFilter] = useState<FilterStatus>("all");
 
   const filtered = filter === "all" ? payments : payments.filter((p) => p.status === filter);
-
   const totalPending = payments.filter((p) => p.status === "pending").reduce((s, p) => s + p.amount, 0);
   const totalOverdue = payments.filter((p) => p.status === "overdue").reduce((s, p) => s + p.amount, 0);
 
   return (
     <MobileLayout title="Pagamentos">
       <div className="p-4 space-y-4">
-        {/* Summary Cards */}
         <div className="grid grid-cols-2 gap-3">
           <div className="bg-warning/10 border border-warning/20 rounded-xl p-3">
             <p className="text-xs text-muted-foreground">Pendente</p>
@@ -34,7 +34,6 @@ export default function Payments() {
           </div>
         </div>
 
-        {/* Filters */}
         <div className="flex gap-2">
           {([
             { key: "all", label: "Todos" },
@@ -57,7 +56,6 @@ export default function Payments() {
           ))}
         </div>
 
-        {/* Payment List */}
         <div className="space-y-2">
           {filtered.map((payment) => {
             const config = statusConfig[payment.status];
@@ -80,6 +78,15 @@ export default function Payments() {
                 </div>
                 {payment.paidDate && (
                   <p className="text-[10px] text-success mt-1">Pago em {new Date(payment.paidDate).toLocaleDateString("pt-BR")}</p>
+                )}
+                {payment.status !== "paid" && (
+                  <button
+                    onClick={() => markPaymentPaid(payment.id)}
+                    className="flex items-center gap-1.5 mt-3 text-[11px] font-medium px-3 py-1.5 rounded-lg bg-success/15 text-success hover:bg-success/25 transition-colors"
+                  >
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                    Confirmar Pagamento
+                  </button>
                 )}
               </div>
             );
