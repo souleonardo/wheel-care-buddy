@@ -1,5 +1,6 @@
 import { MobileLayout } from "@/components/MobileLayout";
-import { revisions } from "@/data/mockData";
+import { AddRevisionDialog } from "@/components/AddRevisionDialog";
+import { useFleet } from "@/context/FleetContext";
 import { Clock, CheckCircle2, Wrench, CalendarDays } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -10,10 +11,11 @@ const statusConfig = {
 };
 
 export default function Revisions() {
+  const { revisions } = useFleet();
+
   return (
     <MobileLayout title="Revisões">
       <div className="p-4 space-y-4">
-        {/* Summary */}
         <div className="flex gap-2">
           {(["scheduled", "in_progress", "completed"] as const).map((status) => {
             const count = revisions.filter((r) => r.status === status).length;
@@ -27,7 +29,10 @@ export default function Revisions() {
           })}
         </div>
 
-        {/* Revision List */}
+        <div className="flex justify-end">
+          <AddRevisionDialog />
+        </div>
+
         <div className="space-y-3">
           {revisions.map((rev) => {
             const config = statusConfig[rev.status];

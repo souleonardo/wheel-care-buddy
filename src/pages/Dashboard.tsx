@@ -1,7 +1,7 @@
 import { MobileLayout } from "@/components/MobileLayout";
 import { StatCard } from "@/components/StatCard";
-import { vehicles, payments, revisions } from "@/data/mockData";
-import { Car, CreditCard, AlertTriangle, Wrench, Clock, CheckCircle2 } from "lucide-react";
+import { useFleet } from "@/context/FleetContext";
+import { Car, CreditCard, AlertTriangle, Wrench, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const statusLabels = {
@@ -11,6 +11,8 @@ const statusLabels = {
 };
 
 export default function Dashboard() {
+  const { vehicles, payments, revisions } = useFleet();
+
   const activeRentals = vehicles.filter((v) => v.status === "rented").length;
   const overduePayments = payments.filter((p) => p.status === "overdue").length;
   const pendingPayments = payments.filter((p) => p.status === "pending").length;
@@ -23,13 +25,11 @@ export default function Dashboard() {
   return (
     <MobileLayout title="FleetControl">
       <div className="p-4 space-y-6">
-        {/* Greeting */}
         <div>
           <h2 className="text-2xl font-bold text-foreground">Olá, Admin 👋</h2>
           <p className="text-sm text-muted-foreground mt-1">Aqui está o resumo da sua frota</p>
         </div>
 
-        {/* Stats Grid */}
         <div className="grid grid-cols-2 gap-3">
           <StatCard title="Alugados" value={activeRentals} subtitle={`de ${vehicles.length} veículos`} icon={Car} variant="primary" />
           <StatCard title="Receita/Semana" value={`R$ ${totalWeeklyRevenue.toLocaleString("pt-BR")}`} icon={CreditCard} variant="success" />
@@ -37,7 +37,6 @@ export default function Dashboard() {
           <StatCard title="Revisões" value={upcomingRevisions} subtitle="agendadas" icon={Wrench} variant="warning" />
         </div>
 
-        {/* Recent Payments */}
         <section>
           <h3 className="text-sm font-semibold text-foreground mb-3 uppercase tracking-wider">Pagamentos Recentes</h3>
           <div className="space-y-2">
@@ -59,7 +58,6 @@ export default function Dashboard() {
           </div>
         </section>
 
-        {/* Upcoming Revisions */}
         <section>
           <h3 className="text-sm font-semibold text-foreground mb-3 uppercase tracking-wider">Próximas Revisões</h3>
           <div className="space-y-2">
