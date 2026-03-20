@@ -80,6 +80,10 @@ export function FleetProvider({ children }: { children: ReactNode }) {
     setVehicles((prev) => [...prev, { ...v, id: crypto.randomUUID() }]);
   }, []);
 
+  const removeVehicle = useCallback((id: string) => {
+    setVehicles((prev) => prev.filter((v) => v.id !== id));
+  }, []);
+
   const addRevision = useCallback((r: Omit<Revision, "id">) => {
     setRevisions((prev) => [...prev, { ...r, id: crypto.randomUUID() }]);
   }, []);
