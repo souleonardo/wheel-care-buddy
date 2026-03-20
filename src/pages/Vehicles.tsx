@@ -1,6 +1,7 @@
 import { useFleet } from "@/context/FleetContext";
 import { MobileLayout } from "@/components/MobileLayout";
 import { AddVehicleDialog } from "@/components/AddVehicleDialog";
+import { EditRenterDialog } from "@/components/EditRenterDialog";
 import { Car, User, Calendar, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
