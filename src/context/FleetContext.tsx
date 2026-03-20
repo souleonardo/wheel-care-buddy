@@ -64,6 +64,7 @@ interface FleetContextType {
   revisions: Revision[];
   addVehicle: (v: Omit<Vehicle, "id">) => void;
   removeVehicle: (id: string) => void;
+  updateVehicle: (id: string, updates: Partial<Omit<Vehicle, "id">>) => void;
   addRevision: (r: Omit<Revision, "id">) => void;
   markPaymentPaid: (id: string) => void;
   updateRevisionStatus: (id: string, status: Revision["status"]) => void;
@@ -82,6 +83,12 @@ export function FleetProvider({ children }: { children: ReactNode }) {
 
   const removeVehicle = useCallback((id: string) => {
     setVehicles((prev) => prev.filter((v) => v.id !== id));
+  }, []);
+
+  const updateVehicle = useCallback((id: string, updates: Partial<Omit<Vehicle, "id">>) => {
+    setVehicles((prev) =>
+      prev.map((v) => (v.id === id ? { ...v, ...updates } : v))
+    );
   }, []);
 
   const addRevision = useCallback((r: Omit<Revision, "id">) => {
@@ -103,7 +110,7 @@ export function FleetProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <FleetContext.Provider value={{ vehicles, payments, revisions, addVehicle, removeVehicle, addRevision, markPaymentPaid, updateRevisionStatus }}>
+    <FleetContext.Provider value={{ vehicles, payments, revisions, addVehicle, removeVehicle, updateVehicle, addRevision, markPaymentPaid, updateRevisionStatus }}>
       {children}
     </FleetContext.Provider>
   );
