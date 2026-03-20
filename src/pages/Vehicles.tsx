@@ -61,6 +61,7 @@ export default function Vehicles() {
                   <div className="flex items-center gap-2">
                     <EditRenterDialog vehicle={vehicle} />
                     <span className={cn("text-[10px] font-medium px-2.5 py-1 rounded-full", config.class)}>
+                      {config.label}
                     </span>
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
