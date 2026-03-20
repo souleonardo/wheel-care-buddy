@@ -28,7 +28,7 @@ export default function Dashboard() {
     <MobileLayout title="FleetControl">
       <div className="p-4 space-y-6">
         <div>
-          <h2 className="text-2xl font-bold text-foreground">Olá, Admin 👋</h2>
+          <h2 className="text-2xl font-bold text-foreground">Olá, {fullName?.split(" ")[0] || "Admin"} 👋</h2>
           <p className="text-sm text-muted-foreground mt-1">Aqui está o resumo da sua frota</p>
         </div>
 
