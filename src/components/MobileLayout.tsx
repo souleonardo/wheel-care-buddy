@@ -1,13 +1,22 @@
 import { ReactNode } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Car, CreditCard, Wrench } from "lucide-react";
+import { LayoutDashboard, Car, CreditCard, Wrench, LogOut, User } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth, AppRole } from "@/hooks/useAuth";
 
-const tabs = [
-  { label: "Painel", icon: LayoutDashboard, path: "/" },
-  { label: "Veículos", icon: Car, path: "/veiculos" },
-  { label: "Pagamentos", icon: CreditCard, path: "/pagamentos" },
-  { label: "Revisões", icon: Wrench, path: "/revisoes" },
+interface TabDef {
+  label: string;
+  icon: typeof LayoutDashboard;
+  path: string;
+  roles: AppRole[];
+}
+
+const allTabs: TabDef[] = [
+  { label: "Painel", icon: LayoutDashboard, path: "/", roles: ["admin"] },
+  { label: "Veículos", icon: Car, path: "/veiculos", roles: ["admin"] },
+  { label: "Pagamentos", icon: CreditCard, path: "/pagamentos", roles: ["admin"] },
+  { label: "Revisões", icon: Wrench, path: "/revisoes", roles: ["admin", "locador"] },
+  { label: "Oficina", icon: Wrench, path: "/oficina", roles: ["admin", "mecanico"] },
 ];
 
 interface MobileLayoutProps {
@@ -18,12 +27,40 @@ interface MobileLayoutProps {
 export function MobileLayout({ children, title }: MobileLayoutProps) {
   const location = useLocation();
   const navigate = useNavigate();
+  const { role, fullName, signOut } = useAuth();
+
+  const tabs = allTabs.filter((t) => role && t.roles.includes(role));
+
+  const roleLabels: Record<AppRole, string> = {
+    admin: "Administrador",
+    locador: "Locador",
+    mecanico: "Mecânico",
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
       {/* Header */}
       <header className="sticky top-0 z-40 bg-card/90 backdrop-blur-xl border-b border-border/50 px-4 py-3">
-        <h1 className="text-lg font-bold text-foreground">{title || "FleetControl"}</h1>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-lg font-bold text-foreground">{title || "FleetControl"}</h1>
+            {role && (
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <User className="h-3 w-3 text-muted-foreground" />
+                <span className="text-[11px] text-muted-foreground">
+                  {fullName} · {roleLabels[role]}
+                </span>
+              </div>
+            )}
+          </div>
+          <button
+            onClick={async () => { await signOut(); navigate("/login"); }}
+            className="h-8 w-8 rounded-lg flex items-center justify-center bg-secondary hover:bg-destructive/15 text-muted-foreground hover:text-destructive transition-colors"
+            title="Sair"
+          >
+            <LogOut className="h-4 w-4" />
+          </button>
+        </div>
       </header>
 
       {/* Content */}
