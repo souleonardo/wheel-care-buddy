@@ -63,6 +63,7 @@ interface FleetContextType {
   payments: Payment[];
   revisions: Revision[];
   addVehicle: (v: Omit<Vehicle, "id">) => void;
+  removeVehicle: (id: string) => void;
   addRevision: (r: Omit<Revision, "id">) => void;
   markPaymentPaid: (id: string) => void;
   updateRevisionStatus: (id: string, status: Revision["status"]) => void;
