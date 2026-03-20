@@ -1,6 +1,7 @@
 import { MobileLayout } from "@/components/MobileLayout";
 import { StatCard } from "@/components/StatCard";
 import { useFleet } from "@/context/FleetContext";
+import { useAuth } from "@/hooks/useAuth";
 import { Car, CreditCard, AlertTriangle, Wrench, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 
