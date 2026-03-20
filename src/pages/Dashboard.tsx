@@ -13,6 +13,7 @@ const statusLabels = {
 
 export default function Dashboard() {
   const { vehicles, payments, revisions } = useFleet();
+  const { fullName } = useAuth();
 
   const activeRentals = vehicles.filter((v) => v.status === "rented").length;
   const overduePayments = payments.filter((p) => p.status === "overdue").length;
