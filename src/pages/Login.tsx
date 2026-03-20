@@ -17,6 +17,17 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [signUpSuccess, setSignUpSuccess] = useState(false);
 
+  useEffect(() => {
+    if (user && userRole) {
+      const homeMap: Record<AppRole, string> = {
+        admin: "/",
+        locador: "/revisoes",
+        mecanico: "/oficina",
+      };
+      navigate(homeMap[userRole], { replace: true });
+    }
+  }, [user, userRole, navigate]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
