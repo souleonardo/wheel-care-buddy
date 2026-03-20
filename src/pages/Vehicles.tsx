@@ -1,8 +1,20 @@
 import { useFleet } from "@/context/FleetContext";
 import { MobileLayout } from "@/components/MobileLayout";
 import { AddVehicleDialog } from "@/components/AddVehicleDialog";
-import { Car, User, Calendar } from "lucide-react";
+import { Car, User, Calendar, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
 
 const statusConfig = {
   available: { label: "Disponível", class: "bg-success/15 text-success" },
@@ -11,12 +23,11 @@ const statusConfig = {
 };
 
 export default function Vehicles() {
-  const { vehicles } = useFleet();
+  const { vehicles, removeVehicle } = useFleet();
 
   return (
     <MobileLayout title="Veículos">
       <div className="p-4 space-y-4">
-        {/* Header with Add */}
         <div className="flex items-center justify-between">
           <div className="flex gap-2 flex-1">
             {(["available", "rented", "maintenance"] as const).map((status) => {
@@ -36,7 +47,6 @@ export default function Vehicles() {
           <AddVehicleDialog />
         </div>
 
-        {/* Vehicle List */}
         <div className="space-y-3">
           {vehicles.map((vehicle) => {
             const config = statusConfig[vehicle.status];
@@ -47,9 +57,35 @@ export default function Vehicles() {
                     <h3 className="text-base font-semibold text-foreground">{vehicle.model}</h3>
                     <p className="text-sm text-muted-foreground">{vehicle.plate} · {vehicle.year}</p>
                   </div>
-                  <span className={cn("text-[10px] font-medium px-2.5 py-1 rounded-full", config.class)}>
-                    {config.label}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className={cn("text-[10px] font-medium px-2.5 py-1 rounded-full", config.class)}>
+                      {config.label}
+                    </span>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md">
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Remover veículo</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Tem certeza que deseja remover o veículo <strong>{vehicle.model}</strong> ({vehicle.plate}) da frota? Esta ação não pode ser desfeita.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                          <AlertDialogAction
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            onClick={() => removeVehicle(vehicle.id)}
+                          >
+                            Remover
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
                 </div>
                 <div className="flex items-center gap-4 text-xs text-muted-foreground">
                   <div className="flex items-center gap-1.5">
