@@ -14,16 +14,232 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      payments: {
+        Row: {
+          amount: number
+          created_at: string
+          due_date: string
+          id: string
+          paid_date: string | null
+          receipt_url: string | null
+          renter_id: string
+          status: string
+          updated_at: string
+          vehicle_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          due_date: string
+          id?: string
+          paid_date?: string | null
+          receipt_url?: string | null
+          renter_id: string
+          status?: string
+          updated_at?: string
+          vehicle_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          due_date?: string
+          id?: string
+          paid_date?: string | null
+          receipt_url?: string | null
+          renter_id?: string
+          status?: string
+          updated_at?: string
+          vehicle_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          full_name: string
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          full_name: string
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          full_name?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      revisions: {
+        Row: {
+          created_at: string
+          id: string
+          mechanic_notes: string | null
+          notes: string | null
+          requested_by: string | null
+          scheduled_date: string
+          status: string
+          type: string
+          updated_at: string
+          vehicle_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          mechanic_notes?: string | null
+          notes?: string | null
+          requested_by?: string | null
+          scheduled_date: string
+          status?: string
+          type: string
+          updated_at?: string
+          vehicle_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          mechanic_notes?: string | null
+          notes?: string | null
+          requested_by?: string | null
+          scheduled_date?: string
+          status?: string
+          type?: string
+          updated_at?: string
+          vehicle_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "revisions_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      vehicle_assignments: {
+        Row: {
+          assigned_at: string
+          id: string
+          is_active: boolean
+          released_at: string | null
+          renter_id: string
+          vehicle_id: string
+        }
+        Insert: {
+          assigned_at?: string
+          id?: string
+          is_active?: boolean
+          released_at?: string | null
+          renter_id: string
+          vehicle_id: string
+        }
+        Update: {
+          assigned_at?: string
+          id?: string
+          is_active?: boolean
+          released_at?: string | null
+          renter_id?: string
+          vehicle_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicle_assignments_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vehicles: {
+        Row: {
+          created_at: string
+          id: string
+          model: string
+          next_revision: string | null
+          plate: string
+          status: string
+          updated_at: string
+          weekly_rate: number
+          year: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          model: string
+          next_revision?: string | null
+          plate: string
+          status?: string
+          updated_at?: string
+          weekly_rate: number
+          year: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          model?: string
+          next_revision?: string | null
+          plate?: string
+          status?: string
+          updated_at?: string
+          weekly_rate?: number
+          year?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_user_role: {
+        Args: { _user_id: string }
+        Returns: Database["public"]["Enums"]["app_role"]
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "locador" | "mecanico"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +366,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "locador", "mecanico"],
+    },
   },
 } as const
