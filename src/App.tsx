@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { FleetProvider } from "@/context/FleetContext";
 import Dashboard from "./pages/Dashboard";
 import Vehicles from "./pages/Vehicles";
 import Payments from "./pages/Payments";
@@ -22,15 +23,17 @@ const App = () => (
       <Sonner />
       <AuthProvider>
         <BrowserRouter>
-          <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route path="/" element={<ProtectedRoute allowedRoles={["admin"]}><Dashboard /></ProtectedRoute>} />
-            <Route path="/veiculos" element={<ProtectedRoute allowedRoles={["admin"]}><Vehicles /></ProtectedRoute>} />
-            <Route path="/pagamentos" element={<ProtectedRoute allowedRoles={["admin"]}><Payments /></ProtectedRoute>} />
-            <Route path="/revisoes" element={<ProtectedRoute allowedRoles={["admin", "locador"]}><Revisions /></ProtectedRoute>} />
-            <Route path="/oficina" element={<ProtectedRoute allowedRoles={["admin", "mecanico"]}><Workshop /></ProtectedRoute>} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <FleetProvider>
+            <Routes>
+              <Route path="/login" element={<Login />} />
+              <Route path="/" element={<ProtectedRoute allowedRoles={["admin"]}><Dashboard /></ProtectedRoute>} />
+              <Route path="/veiculos" element={<ProtectedRoute allowedRoles={["admin"]}><Vehicles /></ProtectedRoute>} />
+              <Route path="/pagamentos" element={<ProtectedRoute allowedRoles={["admin"]}><Payments /></ProtectedRoute>} />
+              <Route path="/revisoes" element={<ProtectedRoute allowedRoles={["admin", "locador"]}><Revisions /></ProtectedRoute>} />
+              <Route path="/oficina" element={<ProtectedRoute allowedRoles={["admin", "mecanico"]}><Workshop /></ProtectedRoute>} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </FleetProvider>
         </BrowserRouter>
       </AuthProvider>
     </TooltipProvider>
