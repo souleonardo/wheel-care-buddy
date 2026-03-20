@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth, AppRole } from "@/hooks/useAuth";
 import { Car, Eye, EyeOff, LogIn, UserPlus } from "lucide-react";
 import { cn } from "@/lib/utils";
