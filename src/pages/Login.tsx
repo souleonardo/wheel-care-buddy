@@ -5,7 +5,7 @@ import { Car, Eye, EyeOff, LogIn, UserPlus } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function Login() {
-  const { signIn, signUp, user, role } = useAuth();
+  const { signIn, signUp, user, role: userRole } = useAuth();
   const navigate = useNavigate();
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState("");
