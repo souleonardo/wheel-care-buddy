@@ -103,7 +103,7 @@ export function FleetProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <FleetContext.Provider value={{ vehicles, payments, revisions, addVehicle, addRevision, markPaymentPaid, updateRevisionStatus }}>
+    <FleetContext.Provider value={{ vehicles, payments, revisions, addVehicle, removeVehicle, addRevision, markPaymentPaid, updateRevisionStatus }}>
       {children}
     </FleetContext.Provider>
   );
