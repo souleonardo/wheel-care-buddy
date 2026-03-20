@@ -1,10 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth, AppRole } from "@/hooks/useAuth";
 import { Car, Eye, EyeOff, LogIn, UserPlus } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function Login() {
-  const { signIn, signUp } = useAuth();
+  const { signIn, signUp, user, role: userRole } = useAuth();
+  const navigate = useNavigate();
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -14,6 +16,17 @@ export default function Login() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [signUpSuccess, setSignUpSuccess] = useState(false);
+
+  useEffect(() => {
+    if (user && userRole) {
+      const homeMap: Record<AppRole, string> = {
+        admin: "/",
+        locador: "/revisoes",
+        mecanico: "/oficina",
+      };
+      navigate(homeMap[userRole], { replace: true });
+    }
+  }, [user, userRole, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
