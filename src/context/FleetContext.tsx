@@ -11,6 +11,7 @@ export interface Vehicle {
   weeklyRate: number;
   nextRevision?: string;
   crlvUrl?: string;
+  crlvExpiryDate?: string;
 }
 
 export interface Payment {
@@ -122,6 +123,7 @@ export function FleetProvider({ children }: { children: ReactNode }) {
         weeklyRate: Number(v.weekly_rate),
         nextRevision: v.next_revision ?? undefined,
         crlvUrl: v.crlv_url ?? undefined,
+        crlvExpiryDate: (v as any).crlv_expiry_date ?? undefined,
         renterName: renterMap[v.id] || undefined,
       }));
       setVehicles(mapped);

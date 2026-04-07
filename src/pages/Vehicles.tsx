@@ -1,22 +1,20 @@
 import { useState } from "react";
-import { useFleet } from "@/context/FleetContext";
+import { useFleet, Vehicle } from "@/context/FleetContext";
 import { MobileLayout } from "@/components/MobileLayout";
 import { AddVehicleDialog } from "@/components/AddVehicleDialog";
 import { EditRenterDialog } from "@/components/EditRenterDialog";
 import { UploadCRLVButton } from "@/components/UploadCRLVButton";
 import { VehicleHistoryDialog } from "@/components/VehicleHistoryDialog";
-import { Car, User, Calendar, Trash2 } from "lucide-react";
+import { Car, User, Calendar, Trash2, ShieldCheck, ShieldAlert, ShieldX } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 
@@ -25,6 +23,58 @@ const statusConfig = {
   rented: { label: "Alugado", class: "bg-primary/15 text-primary" },
   maintenance: { label: "Manutenção", class: "bg-warning/15 text-warning" },
 };
+
+function getCrlvStatus(expiryDate?: string): { label: string; icon: typeof ShieldCheck; colorClass: string } | null {
+  if (!expiryDate) return null;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const expiry = new Date(expiryDate + "T00:00:00");
+  const diffDays = Math.ceil((expiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+
+  if (diffDays < 0) {
+    return { label: "CRLV Vencido", icon: ShieldX, colorClass: "text-destructive bg-destructive/10" };
+  }
+  if (diffDays <= 30) {
+    return { label: `CRLV vence em ${diffDays}d`, icon: ShieldAlert, colorClass: "text-warning bg-warning/10" };
+  }
+  return { label: "CRLV Válido", icon: ShieldCheck, colorClass: "text-success bg-success/10" };
+}
+
+function CrlvExpiryEditor({ vehicle, onSaved }: { vehicle: Vehicle; onSaved: () => void }) {
+  const [date, setDate] = useState(vehicle.crlvExpiryDate || "");
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = async () => {
+    if (!date) return;
+    setSaving(true);
+    const { error } = await supabase
+      .from("vehicles")
+      .update({ crlv_expiry_date: date } as any)
+      .eq("id", vehicle.id);
+    setSaving(false);
+    if (error) {
+      toast.error("Erro ao salvar validade");
+      return;
+    }
+    toast.success("Validade do CRLV atualizada");
+    onSaved();
+  };
+
+  return (
+    <div className="space-y-2 p-1">
+      <Label className="text-xs">Validade do CRLV</Label>
+      <Input
+        type="date"
+        value={date}
+        onChange={(e) => setDate(e.target.value)}
+        className="h-8 text-xs"
+      />
+      <Button size="sm" className="w-full h-7 text-xs" onClick={handleSave} disabled={saving || !date}>
+        {saving ? "Salvando..." : "Salvar"}
+      </Button>
+    </div>
+  );
+}
 
 export default function Vehicles() {
   const { vehicles, removeVehicle, refreshVehicles } = useFleet();
@@ -54,6 +104,7 @@ export default function Vehicles() {
         <div className="space-y-3">
           {vehicles.map((vehicle) => {
             const config = statusConfig[vehicle.status];
+            const crlvStatus = getCrlvStatus(vehicle.crlvExpiryDate);
             return (
               <div key={vehicle.id} className="bg-card rounded-xl border border-border/50 p-4 space-y-3">
                 <div className="flex items-start justify-between">
@@ -103,7 +154,8 @@ export default function Vehicles() {
                     </AlertDialog>
                   </div>
                 </div>
-                <div className="flex items-center gap-4 text-xs text-muted-foreground">
+
+                <div className="flex items-center gap-4 text-xs text-muted-foreground flex-wrap">
                   <div className="flex items-center gap-1.5">
                     <Car className="h-3.5 w-3.5" />
                     <span>R$ {vehicle.weeklyRate}/sem</span>
@@ -120,6 +172,26 @@ export default function Vehicles() {
                       <span>{new Date(vehicle.nextRevision).toLocaleDateString("pt-BR")}</span>
                     </div>
                   )}
+
+                  {/* CRLV Status */}
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      {crlvStatus ? (
+                        <button className={cn("flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium", crlvStatus.colorClass)}>
+                          <crlvStatus.icon className="h-3 w-3" />
+                          {crlvStatus.label}
+                        </button>
+                      ) : (
+                        <button className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium text-muted-foreground bg-muted/50">
+                          <ShieldAlert className="h-3 w-3" />
+                          Definir CRLV
+                        </button>
+                      )}
+                    </PopoverTrigger>
+                    <PopoverContent className="w-56 p-3" align="start">
+                      <CrlvExpiryEditor vehicle={vehicle} onSaved={refreshVehicles} />
+                    </PopoverContent>
+                  </Popover>
                 </div>
               </div>
             );
