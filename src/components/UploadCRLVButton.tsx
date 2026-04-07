@@ -1,17 +1,18 @@
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { FileUp, FileCheck, Loader2 } from "lucide-react";
+import { FileUp, FileCheck, Loader2, Download } from "lucide-react";
 import { toast } from "sonner";
 
 interface UploadCRLVButtonProps {
   vehicleId: string;
   vehiclePlate: string;
   hasCrlv: boolean;
+  crlvUrl?: string;
   onUploaded: (url: string) => void;
 }
 
-export function UploadCRLVButton({ vehicleId, vehiclePlate, hasCrlv, onUploaded }: UploadCRLVButtonProps) {
+export function UploadCRLVButton({ vehicleId, vehiclePlate, hasCrlv, crlvUrl, onUploaded }: UploadCRLVButtonProps) {
   const [uploading, setUploading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -29,7 +30,6 @@ export function UploadCRLVButton({ vehicleId, vehiclePlate, hasCrlv, onUploaded 
       const ext = file.name.split(".").pop();
       const path = `${vehicleId}/crlv.${ext}`;
 
-      // Remove old file if exists
       await supabase.storage.from("vehicle-documents").remove([path]);
 
       const { error: uploadError } = await supabase.storage
@@ -38,7 +38,6 @@ export function UploadCRLVButton({ vehicleId, vehiclePlate, hasCrlv, onUploaded 
 
       if (uploadError) throw uploadError;
 
-      // Update vehicle record with the path
       const { error: updateError } = await supabase
         .from("vehicles")
         .update({ crlv_url: path } as any)
@@ -57,8 +56,20 @@ export function UploadCRLVButton({ vehicleId, vehiclePlate, hasCrlv, onUploaded 
     }
   };
 
+  const handleDownload = async () => {
+    if (!crlvUrl) return;
+    const { data, error } = await supabase.storage
+      .from("vehicle-documents")
+      .createSignedUrl(crlvUrl, 300);
+    if (error || !data?.signedUrl) {
+      toast.error("Erro ao gerar link de download");
+      return;
+    }
+    window.open(data.signedUrl, "_blank");
+  };
+
   return (
-    <>
+    <div className="flex items-center gap-0">
       <input
         ref={inputRef}
         type="file"
@@ -82,6 +93,17 @@ export function UploadCRLVButton({ vehicleId, vehiclePlate, hasCrlv, onUploaded 
           <FileUp className="h-4 w-4" />
         )}
       </Button>
-    </>
+      {hasCrlv && (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 text-muted-foreground hover:text-primary"
+          onClick={handleDownload}
+          title="Baixar CRLV"
+        >
+          <Download className="h-4 w-4" />
+        </Button>
+      )}
+    </div>
   );
 }
