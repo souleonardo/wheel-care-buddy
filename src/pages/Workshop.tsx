@@ -25,10 +25,13 @@ const statusConfig = {
 
 export default function Workshop() {
   const { revisions, updateRevisionStatus } = useFleet();
+  const { userRole } = useAuth();
+  const isAdmin = userRole === "admin";
   const activeRevisions = revisions.filter((r) => r.status !== "completed");
   const completedRevisions = revisions.filter((r) => r.status === "completed");
 
   const [usageMap, setUsageMap] = useState<Record<string, UsageRecord[]>>({});
+  const [billableTypes, setBillableTypes] = useState<Set<string>>(new Set());
 
   const fetchUsage = useCallback(async () => {
     const revisionIds = revisions.map((r) => r.id);
