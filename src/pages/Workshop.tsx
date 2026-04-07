@@ -7,7 +7,8 @@ import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { generateRevisionPDF } from "@/lib/generateRevisionPDF";
 import { toast } from "sonner";
-import { isServiceBillable } from "@/lib/billableServices";
+import { BillableConfigDialog } from "@/components/BillableConfigDialog";
+import { useAuth } from "@/hooks/useAuth";
 
 interface UsageRecord {
   id: string;
@@ -24,10 +25,13 @@ const statusConfig = {
 
 export default function Workshop() {
   const { revisions, updateRevisionStatus } = useFleet();
+  const { role } = useAuth();
+  const isAdmin = role === "admin";
   const activeRevisions = revisions.filter((r) => r.status !== "completed");
   const completedRevisions = revisions.filter((r) => r.status === "completed");
 
   const [usageMap, setUsageMap] = useState<Record<string, UsageRecord[]>>({});
+  const [billableTypes, setBillableTypes] = useState<Set<string>>(new Set());
 
   const fetchUsage = useCallback(async () => {
     const revisionIds = revisions.map((r) => r.id);
@@ -49,9 +53,17 @@ export default function Workshop() {
     }
   }, [revisions]);
 
+  const fetchBillableTypes = useCallback(async () => {
+    const { data } = await supabase
+      .from("billable_service_types")
+      .select("service_type");
+    if (data) setBillableTypes(new Set(data.map((d: any) => d.service_type)));
+  }, []);
+
   useEffect(() => {
     fetchUsage();
-  }, [fetchUsage]);
+    fetchBillableTypes();
+  }, [fetchUsage, fetchBillableTypes]);
 
   const renderUsageList = (revisionId: string) => {
     const items = usageMap[revisionId];
@@ -86,6 +98,12 @@ export default function Workshop() {
             );
           })}
         </div>
+
+        {isAdmin && (
+          <div className="flex justify-end">
+            <BillableConfigDialog onUpdated={fetchBillableTypes} />
+          </div>
+        )}
 
         {/* Active */}
         <section>
@@ -154,7 +172,7 @@ export default function Workshop() {
 
                                 // Calculate cost & generate maintenance payment if billable
                                 const usageItems = usageMap[rev.id] || [];
-                                if (isServiceBillable(rev.type) && usageItems.length > 0) {
+                                if (billableTypes.has(rev.type) && usageItems.length > 0) {
                                   const totalCost = usageItems.reduce((sum, u) => {
                                     const cost = u.supply?.unit_cost ?? 0;
                                     return sum + u.quantity_used * cost;
