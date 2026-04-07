@@ -157,6 +157,37 @@ export default function Invoices() {
     }
   };
 
+  const handleMarkPaid = async () => {
+    if (!confirmPayId) return;
+    const inv = invoices.find((i) => i.id === confirmPayId);
+    if (!inv) return;
+
+    const today = new Date().toISOString().split("T")[0];
+
+    // Update invoice status
+    const { error: invErr } = await supabase
+      .from("invoices")
+      .update({ status: "paid" })
+      .eq("id", inv.id);
+
+    if (invErr) {
+      toast.error("Erro ao atualizar fatura: " + invErr.message);
+      setConfirmPayId(null);
+      return;
+    }
+
+    // Update related payment record
+    await supabase
+      .from("payments")
+      .update({ status: "paid", paid_date: today })
+      .eq("revision_id", inv.revision_id)
+      .eq("payment_type", "maintenance");
+
+    toast.success("Fatura marcada como paga");
+    setConfirmPayId(null);
+    fetchInvoices();
+  };
+
   return (
     <MobileLayout title="Faturas">
       <div className="p-4 space-y-4">
