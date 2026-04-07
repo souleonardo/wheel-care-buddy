@@ -101,12 +101,20 @@ export default function Reports() {
 
       const revIds = (revData ?? []).map((r: any) => r.id);
       let usageData: any[] = [];
+      let laborData: any[] = [];
       if (revIds.length > 0) {
-        const { data } = await supabase
-          .from("supply_usage")
-          .select("revision_id, quantity_used, supply:supplies(name, unit, unit_cost)")
-          .in("revision_id", revIds);
-        usageData = data ?? [];
+        const [usageRes, laborRes] = await Promise.all([
+          supabase
+            .from("supply_usage")
+            .select("revision_id, quantity_used, supply:supplies(name, unit, unit_cost)")
+            .in("revision_id", revIds),
+          supabase
+            .from("labor_charges")
+            .select("revision_id, mechanic_id, amount, description, status")
+            .in("revision_id", revIds),
+        ]);
+        usageData = usageRes.data ?? [];
+        laborData = laborRes.data ?? [];
       }
 
       const usageByRev: Record<string, any[]> = {};
@@ -120,6 +128,22 @@ export default function Reports() {
         });
       });
 
+      // Build labor charges with vehicle/mechanic info
+      const revMap = Object.fromEntries((revData as any[]).map((r) => [r.id, r]));
+      const rMap = Object.fromEntries(renters.map((r) => [r.id, r.name]));
+      const laborCharges = (laborData as any[]).map((l) => {
+        const rev = revMap[l.revision_id];
+        return {
+          vehicle_plate: rev?.vehicle?.plate ?? "",
+          revision_type: rev?.type ?? "",
+          mechanic_name: rMap[l.mechanic_id] ?? "Mecânico",
+          amount: Number(l.amount),
+          description: l.description,
+          status: l.status,
+          scheduled_date: rev?.scheduled_date ?? "",
+        };
+      });
+
       await generateMaintenanceReport({
         revisions: (revData as any[]).map((r) => ({
           vehicle_plate: r.vehicle?.plate ?? "",
@@ -130,6 +154,7 @@ export default function Reports() {
           mechanic_notes: r.mechanic_notes,
           parts: usageByRev[r.id] ?? [],
         })),
+        laborCharges,
         dateRange: { from: dateFrom, to: dateTo },
       });
       toast.success("Relatório de manutenções gerado!");
