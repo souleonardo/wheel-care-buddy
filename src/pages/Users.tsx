@@ -242,7 +242,7 @@ export default function Users() {
                   <Select value={form.role} onValueChange={(v) => setForm((f) => ({ ...f, role: v as CreateRole }))}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="locador">Locador</SelectItem>
+                      <SelectItem value="locador">Locatário</SelectItem>
                       <SelectItem value="mecanico">Mecânico</SelectItem>
                     </SelectContent>
                   </Select>
