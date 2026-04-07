@@ -51,8 +51,6 @@ export function OilChangeMileageDialog({
       toast.error("Selecione o intervalo da próxima troca");
       return;
     }
-      return;
-    }
 
     setLoading(true);
 
