@@ -257,6 +257,40 @@ export default function Supplies() {
                         <span>Mín: {s.min_quantity}</span>
                         <span>R$ {s.unit_cost.toFixed(2)}/{s.unit}</span>
                       </div>
+                      {isAdmin && (
+                        <div className="flex flex-wrap gap-3 mt-2">
+                          <label className="flex items-center gap-1.5 text-[11px] text-muted-foreground cursor-pointer">
+                            <Switch
+                              className="scale-75"
+                              checked={s.is_billable}
+                              onCheckedChange={async (v) => {
+                                await supabase.from("supplies").update({ is_billable: v } as any).eq("id", s.id);
+                                setSupplies((prev) => prev.map((x) => x.id === s.id ? { ...x, is_billable: v } : x));
+                                toast.success(v ? "Peça cobrável" : "Peça não cobrável");
+                              }}
+                            />
+                            Cobrar peça
+                          </label>
+                          <label className="flex items-center gap-1.5 text-[11px] text-muted-foreground cursor-pointer">
+                            <Switch
+                              className="scale-75"
+                              checked={s.is_labor_billable}
+                              onCheckedChange={async (v) => {
+                                await supabase.from("supplies").update({ is_labor_billable: v } as any).eq("id", s.id);
+                                setSupplies((prev) => prev.map((x) => x.id === s.id ? { ...x, is_labor_billable: v } : x));
+                                toast.success(v ? "M.O. cobrável" : "M.O. não cobrável");
+                              }}
+                            />
+                            Cobrar M.O.
+                          </label>
+                        </div>
+                      )}
+                      {!isAdmin && (s.is_billable || s.is_labor_billable) && (
+                        <div className="flex gap-2 mt-2">
+                          {s.is_billable && <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">Peça cobrável</span>}
+                          {s.is_labor_billable && <span className="text-[10px] px-2 py-0.5 rounded-full bg-warning/10 text-warning font-medium">M.O. cobrável</span>}
+                        </div>
+                      )}
                       <div className="flex gap-2 mt-3">
                         <button
                           onClick={() => { setSelectedSupply(s); setAdjustQty(1); setAdjustOpen(true); }}
