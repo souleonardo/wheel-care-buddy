@@ -313,6 +313,24 @@ export default function Invoices() {
                         <FileDown className="h-4 w-4" />
                         Baixar Fatura em PDF
                       </button>
+
+                      {/* Admin: mark as paid */}
+                      {isAdmin && inv.status !== "paid" && inv.status !== "informational" && (
+                        <button
+                          onClick={() => setConfirmPayId(inv.id)}
+                          className="w-full flex items-center justify-center gap-2 py-2 rounded-lg bg-success/10 text-success hover:bg-success/20 transition-colors text-xs font-medium"
+                        >
+                          <CheckCircle2 className="h-4 w-4" />
+                          Marcar como Paga
+                        </button>
+                      )}
+
+                      {inv.status === "paid" && (
+                        <div className="flex items-center justify-center gap-2 py-2 rounded-lg bg-success/10 text-success text-xs font-medium">
+                          <CheckCircle2 className="h-4 w-4" />
+                          Fatura paga
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -321,6 +339,22 @@ export default function Invoices() {
           </div>
         )}
       </div>
+
+      {/* Confirm payment dialog */}
+      <AlertDialog open={!!confirmPayId} onOpenChange={(open) => !open && setConfirmPayId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar pagamento</AlertDialogTitle>
+            <AlertDialogDescription>
+              Deseja marcar esta fatura como paga? O status será atualizado para o administrador e para o locatário.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleMarkPaid}>Confirmar</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </MobileLayout>
   );
 }
