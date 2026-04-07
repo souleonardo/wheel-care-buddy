@@ -214,7 +214,7 @@ export function EditRenterDialog({ vehicle }: EditRenterDialogProps) {
               </div>
             ) : locadores.length === 0 ? (
               <p className="text-sm text-muted-foreground py-2">
-                Nenhum locatário cadastrado. Cadastre um usuário com perfil "Locador" primeiro.
+                Nenhum locatário cadastrado. Cadastre um usuário com perfil "Locatário" primeiro.
               </p>
             ) : (
               <Select value={selectedRenterId} onValueChange={setSelectedRenterId}>

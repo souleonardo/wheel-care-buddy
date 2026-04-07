@@ -30,7 +30,7 @@ interface UserWithRole {
 
 const roleBadge: Record<AppRole, { label: string; variant: "default" | "secondary" | "outline" }> = {
   admin: { label: "Administrador", variant: "default" },
-  locador: { label: "Locador", variant: "secondary" },
+  locador: { label: "Locatário", variant: "secondary" },
   mecanico: { label: "Mecânico", variant: "outline" },
 };
 
@@ -109,11 +109,11 @@ export default function Users() {
 
     if (form.role === "locador") {
       if (!form.cpf.trim()) {
-        toast.error("CPF é obrigatório para locadores");
+        toast.error("CPF é obrigatório para locatários");
         return;
       }
       if (!form.cnhExpiryDate) {
-        toast.error("Validade da CNH é obrigatória para locadores");
+        toast.error("Validade da CNH é obrigatória para locatários");
         return;
       }
     }
@@ -137,7 +137,7 @@ export default function Users() {
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
 
-      toast.success(`Usuário ${form.fullName} criado como ${form.role === "locador" ? "Locador" : "Mecânico"}!`);
+      toast.success(`Usuário ${form.fullName} criado como ${form.role === "locador" ? "Locatário" : "Mecânico"}!`);
       setForm({ email: "", password: "", fullName: "", role: "locador", cpf: "", cnhNumber: "", cnhExpiryDate: "" });
       setOpen(false);
       fetchUsers();
@@ -242,7 +242,7 @@ export default function Users() {
                   <Select value={form.role} onValueChange={(v) => setForm((f) => ({ ...f, role: v as CreateRole }))}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="locador">Locador</SelectItem>
+                      <SelectItem value="locador">Locatário</SelectItem>
                       <SelectItem value="mecanico">Mecânico</SelectItem>
                     </SelectContent>
                   </Select>

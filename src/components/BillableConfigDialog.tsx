@@ -81,7 +81,7 @@ export function BillableConfigDialog({ onUpdated }: Props) {
         <DialogHeader>
           <DialogTitle className="text-base">Configurar Cobranças</DialogTitle>
           <p className="text-xs text-muted-foreground">
-            Ative os tipos de serviço que geram fatura para o locador ao finalizar a revisão.
+            Ative os tipos de serviço que geram fatura para o locatário ao finalizar a revisão.
           </p>
         </DialogHeader>
         <div className="space-y-1 mt-2">

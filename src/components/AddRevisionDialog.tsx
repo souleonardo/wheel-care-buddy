@@ -6,7 +6,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useFleet } from "@/context/FleetContext";
+import { useAuth } from "@/hooks/useAuth";
 import { Plus } from "lucide-react";
+import { toast } from "sonner";
 
 const serviceTypes = [
   "Troca de óleo",
@@ -22,6 +24,8 @@ const serviceTypes = [
 
 export function AddRevisionDialog() {
   const { vehicles, addRevision } = useFleet();
+  const { role } = useAuth();
+  const isLocatario = role === "locador";
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({
     vehicleId: "",
@@ -42,10 +46,11 @@ export function AddRevisionDialog() {
       vehicleModel: selectedVehicle.model,
       type: form.type,
       scheduledDate: form.scheduledDate,
-      status: "scheduled",
+      status: isLocatario ? "pending_approval" : "scheduled",
       notes: form.notes || undefined,
     });
 
+    toast.success(isLocatario ? "Solicitação de revisão enviada para aprovação!" : "Revisão agendada!");
     setForm({ vehicleId: "", type: "", scheduledDate: "", notes: "" });
     setOpen(false);
   };
@@ -55,12 +60,12 @@ export function AddRevisionDialog() {
       <DialogTrigger asChild>
         <Button size="sm" className="gradient-primary text-primary-foreground gap-1.5">
           <Plus className="h-4 w-4" />
-          Agendar
+          Agendar Revisão
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Agendar Revisão</DialogTitle>
+          <DialogTitle>{isLocatario ? "Solicitar Revisão" : "Agendar Revisão"}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1.5">
@@ -95,7 +100,7 @@ export function AddRevisionDialog() {
             <Label htmlFor="notes">Observações</Label>
             <Textarea id="notes" placeholder="Observações adicionais..." value={form.notes} onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))} maxLength={200} rows={2} />
           </div>
-          <Button type="submit" className="w-full gradient-primary text-primary-foreground">Agendar Revisão</Button>
+          <Button type="submit" className="w-full gradient-primary text-primary-foreground">{isLocatario ? "Solicitar Revisão" : "Agendar Revisão"}</Button>
         </form>
       </DialogContent>
     </Dialog>

@@ -148,7 +148,7 @@ export function VehicleHistoryDialog({ vehicleId, vehiclePlate, vehicleModel }: 
             <TabsList className="w-full">
               <TabsTrigger value="renters" className="flex-1 gap-1.5">
                 <Users className="h-3.5 w-3.5" />
-                Locadores ({assignments.length})
+                Locatários ({assignments.length})
               </TabsTrigger>
               <TabsTrigger value="revisions" className="flex-1 gap-1.5">
                 <Wrench className="h-3.5 w-3.5" />
@@ -158,7 +158,7 @@ export function VehicleHistoryDialog({ vehicleId, vehiclePlate, vehicleModel }: 
 
             <TabsContent value="renters" className="overflow-y-auto flex-1 mt-2">
               {assignments.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-8">Nenhum locador registrado.</p>
+                <p className="text-sm text-muted-foreground text-center py-8">Nenhum locatário registrado.</p>
               ) : (
                 <div className="space-y-2">
                   {assignments.map((a) => (
