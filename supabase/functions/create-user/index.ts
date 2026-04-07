@@ -98,6 +98,19 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Update profile with CPF/CNH if locador
+    if (role === "locador" && (cpf || cnhNumber || cnhExpiryDate)) {
+      const profileUpdate: Record<string, string> = {};
+      if (cpf) profileUpdate.cpf = cpf;
+      if (cnhNumber) profileUpdate.cnh_number = cnhNumber;
+      if (cnhExpiryDate) profileUpdate.cnh_expiry_date = cnhExpiryDate;
+
+      await adminClient
+        .from("profiles")
+        .update(profileUpdate)
+        .eq("user_id", newUser.user.id);
+    }
+
     return new Response(
       JSON.stringify({ message: "Usuário criado com sucesso", userId: newUser.user.id }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
