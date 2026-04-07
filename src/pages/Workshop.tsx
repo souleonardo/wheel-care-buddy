@@ -446,6 +446,18 @@ export default function Workshop() {
           oilDialog.pendingComplete?.();
         }}
       />
+
+      {/* Mechanic Notes Dialog (when no parts registered) */}
+      <MechanicNotesDialog
+        open={notesDialog.open}
+        onOpenChange={(open) => {
+          if (!open) setNotesDialog((prev) => ({ ...prev, open: false }));
+        }}
+        revisionLabel={notesDialog.revisionLabel}
+        onConfirm={(notes) => {
+          notesDialog.pendingComplete?.(notes);
+        }}
+      />
     </MobileLayout>
   );
 }
