@@ -381,7 +381,7 @@ export default function Workshop() {
                       )}
 
                       {/* Used supplies */}
-                      {renderUsageList(rev.id)}
+                      {renderUsageList(rev.id, rev.status === "in_progress")}
 
                       {/* Action Buttons */}
                       <div className="flex flex-wrap gap-2 mt-3">
