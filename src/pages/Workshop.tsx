@@ -252,10 +252,17 @@ export default function Workshop() {
       .eq("is_active", true)
       .maybeSingle();
 
-    // Generate invoice with ALL items, charging only billable ones
-    if (assignment?.renter_id && usageItems.length > 0) {
-      const isBillableRevision = billableTypes.has(rev.type);
+    // Fetch labor charges for this revision
+    const { data: laborChargesData } = await supabase
+      .from("labor_charges")
+      .select("amount")
+      .eq("revision_id", rev.id);
+    const laborTotal = (laborChargesData ?? []).reduce((sum, c) => sum + Number(c.amount), 0);
 
+    const isBillableRevision = billableTypes.has(rev.type);
+
+    // Generate invoice if there's a renter AND (has parts, has labor, or is billable type)
+    if (assignment?.renter_id && (usageItems.length > 0 || laborTotal > 0 || isBillableRevision)) {
       const items = usageItems.map((u) => ({
         supply_name: u.supply?.name ?? "—",
         quantity: u.quantity_used,
@@ -264,9 +271,11 @@ export default function Workshop() {
         is_billable: isBillableRevision,
       }));
 
-      const totalBillable = items
+      const partsTotal = items
         .filter((i) => i.is_billable)
         .reduce((sum, i) => sum + i.quantity * i.unit_cost, 0);
+
+      const totalBillable = partsTotal + (isBillableRevision ? laborTotal : 0);
 
       const dueDate = new Date();
       dueDate.setDate(dueDate.getDate() + 7);
@@ -286,12 +295,14 @@ export default function Workshop() {
         .single();
 
       if (!invoiceError && invoice) {
-        // Insert all items
-        const invoiceItems = items.map((i) => ({
-          invoice_id: (invoice as any).id,
-          ...i,
-        }));
-        await supabase.from("invoice_items").insert(invoiceItems as any);
+        // Insert supply items (if any)
+        if (items.length > 0) {
+          const invoiceItems = items.map((i) => ({
+            invoice_id: (invoice as any).id,
+            ...i,
+          }));
+          await supabase.from("invoice_items").insert(invoiceItems as any);
+        }
 
         // Also create payment record for billable amount
         if (totalBillable > 0) {
