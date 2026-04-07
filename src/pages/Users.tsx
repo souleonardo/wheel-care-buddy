@@ -407,6 +407,13 @@ export default function Users() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <EditUserDialog
+        user={editUser}
+        open={!!editUser}
+        onOpenChange={(v) => { if (!v) setEditUser(null); }}
+        onSaved={fetchUsers}
+      />
     </MobileLayout>
   );
 }
