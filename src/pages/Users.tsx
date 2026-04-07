@@ -237,6 +237,39 @@ export default function Users() {
                     </SelectContent>
                   </Select>
                 </div>
+                {form.role === "locador" && (
+                  <>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="cpf">CPF *</Label>
+                      <Input
+                        id="cpf"
+                        placeholder="000.000.000-00"
+                        value={form.cpf}
+                        onChange={(e) => setForm((f) => ({ ...f, cpf: e.target.value }))}
+                        maxLength={14}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="cnhExpiry">Validade da CNH *</Label>
+                      <Input
+                        id="cnhExpiry"
+                        type="date"
+                        value={form.cnhExpiryDate}
+                        onChange={(e) => setForm((f) => ({ ...f, cnhExpiryDate: e.target.value }))}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="cnhNumber">Número da CNH (opcional)</Label>
+                      <Input
+                        id="cnhNumber"
+                        placeholder="Número do registro"
+                        value={form.cnhNumber}
+                        onChange={(e) => setForm((f) => ({ ...f, cnhNumber: e.target.value }))}
+                        maxLength={20}
+                      />
+                    </div>
+                  </>
+                )}
                 <Button type="submit" className="w-full gradient-primary text-primary-foreground" disabled={loading}>
                   {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
                   Criar Usuário
