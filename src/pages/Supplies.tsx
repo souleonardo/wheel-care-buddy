@@ -184,6 +184,17 @@ export default function Supplies() {
                       <Input type="number" min={0} step={0.01} value={form.unit_cost} onChange={(e) => setForm({ ...form, unit_cost: +e.target.value })} />
                     </div>
                   </div>
+                  <div className="space-y-3 pt-2 border-t border-border/50">
+                    <p className="text-xs font-semibold text-muted-foreground">Cobrança ao locatário</p>
+                    <div className="flex items-center justify-between py-1">
+                      <Label className="text-sm">Cobrar peça na revisão</Label>
+                      <Switch checked={form.is_billable} onCheckedChange={(v) => setForm({ ...form, is_billable: v })} />
+                    </div>
+                    <div className="flex items-center justify-between py-1">
+                      <Label className="text-sm">Cobrar mão de obra</Label>
+                      <Switch checked={form.is_labor_billable} onCheckedChange={(v) => setForm({ ...form, is_labor_billable: v })} />
+                    </div>
+                  </div>
                   <Button onClick={handleAdd} className="w-full">Adicionar</Button>
                 </div>
               </DialogContent>
