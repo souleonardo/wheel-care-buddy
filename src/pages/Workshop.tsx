@@ -103,7 +103,17 @@ export default function Workshop() {
     fetchOilStatus();
   }, [fetchUsage, fetchBillableTypes, fetchOilStatus]);
 
-  const renderUsageList = (revisionId: string) => {
+  const handleRemoveUsage = async (usageId: string) => {
+    const { error } = await supabase.from("supply_usage").delete().eq("id", usageId);
+    if (error) {
+      toast.error("Erro ao remover peça: " + error.message);
+      return;
+    }
+    toast.success("Peça removida e estoque restaurado");
+    fetchUsage();
+  };
+
+  const renderUsageList = (revisionId: string, allowDelete = false) => {
     const dbItems = usageMap[revisionId] || [];
     const localItems = localUsageMap[revisionId] || [];
     if (dbItems.length === 0 && localItems.length === 0) return null;
@@ -113,8 +123,19 @@ export default function Workshop() {
           <Package className="h-3 w-3" /> Peças utilizadas ({dbItems.length + localItems.length})
         </p>
         {dbItems.map((item) => (
-          <div key={item.id} className="text-[11px] text-muted-foreground bg-muted/40 rounded px-2 py-1">
-            {item.supply?.name ?? "—"}: <span className="font-medium text-foreground">{item.quantity_used} {item.supply?.unit}</span>
+          <div key={item.id} className="text-[11px] text-muted-foreground bg-muted/40 rounded px-2 py-1 flex items-center justify-between">
+            <span>
+              {item.supply?.name ?? "—"}: <span className="font-medium text-foreground">{item.quantity_used} {item.supply?.unit}</span>
+            </span>
+            {allowDelete && (
+              <button
+                onClick={() => handleRemoveUsage(item.id)}
+                className="text-destructive hover:text-destructive/80 p-0.5 ml-2"
+                title="Remover peça"
+              >
+                <Trash2 className="h-3 w-3" />
+              </button>
+            )}
           </div>
         ))}
         {localItems.map((item, idx) => (
