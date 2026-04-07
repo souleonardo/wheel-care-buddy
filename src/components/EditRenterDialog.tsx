@@ -168,6 +168,36 @@ export function EditRenterDialog({ vehicle }: EditRenterDialogProps) {
           </div>
 
           <div className="space-y-1.5">
+            <Label>Data de Início do Pagamento</Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className={cn(
+                    "w-full justify-start text-left font-normal",
+                    !paymentStartDate && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {paymentStartDate
+                    ? format(paymentStartDate, "dd/MM/yyyy", { locale: ptBR })
+                    : "Selecione a data"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={paymentStartDate}
+                  onSelect={setPaymentStartDate}
+                  initialFocus
+                  className={cn("p-3 pointer-events-auto")}
+                  locale={ptBR}
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+
             <Label>Contrato de Locação</Label>
             <input
               ref={fileRef}
