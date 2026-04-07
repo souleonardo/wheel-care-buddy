@@ -74,7 +74,7 @@ export function LaborChargeDialog({ open, onOpenChange, revisionLabel, onConfirm
             />
           </div>
           <div className="flex gap-2">
-            <Button type="button" variant="outline" onClick={handleSkip} className="flex-1 text-xs">
+            <Button type="button" variant="outline" onClick={() => setConfirmSkip(true)} className="flex-1 text-xs">
               Sem mão de obra
             </Button>
             <Button
