@@ -6,7 +6,12 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useFleet, Vehicle } from "@/context/FleetContext";
 import { supabase } from "@/integrations/supabase/client";
-import { UserPen, Upload, Loader2, FileCheck } from "lucide-react";
+import { UserPen, Upload, Loader2, FileCheck, CalendarIcon } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 interface EditRenterDialogProps {
@@ -26,6 +31,7 @@ export function EditRenterDialog({ vehicle }: EditRenterDialogProps) {
   const [frequency, setFrequency] = useState("weekly");
   const [uploading, setUploading] = useState(false);
   const [contractFile, setContractFile] = useState<File | null>(null);
+  const [paymentStartDate, setPaymentStartDate] = useState<Date | undefined>(undefined);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -75,6 +81,7 @@ export function EditRenterDialog({ vehicle }: EditRenterDialogProps) {
             .from("vehicle_assignments")
             .update({
               payment_frequency: frequency,
+              ...(paymentStartDate ? { payment_start_date: format(paymentStartDate, "yyyy-MM-dd") } : {}),
               ...(contractUrl ? { contract_url: contractUrl } : {}),
             })
             .eq("id", assignments[0].id);
@@ -104,14 +111,17 @@ export function EditRenterDialog({ vehicle }: EditRenterDialogProps) {
       try {
         const { data } = await supabase
           .from("vehicle_assignments")
-          .select("payment_frequency, contract_url")
+          .select("payment_frequency, contract_url, payment_start_date")
           .eq("vehicle_id", vehicle.id)
           .eq("is_active", true)
           .limit(1);
         if (data && data.length > 0) {
           setFrequency((data[0] as any).payment_frequency || "weekly");
+          const startDate = (data[0] as any).payment_start_date;
+          setPaymentStartDate(startDate ? new Date(startDate + "T00:00:00") : undefined);
         } else {
           setFrequency("weekly");
+          setPaymentStartDate(undefined);
         }
       } catch {
         setFrequency("weekly");
@@ -157,6 +167,36 @@ export function EditRenterDialog({ vehicle }: EditRenterDialogProps) {
             </Select>
           </div>
 
+          <div className="space-y-1.5">
+            <Label>Data de Início do Pagamento</Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className={cn(
+                    "w-full justify-start text-left font-normal",
+                    !paymentStartDate && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {paymentStartDate
+                    ? format(paymentStartDate, "dd/MM/yyyy", { locale: ptBR })
+                    : "Selecione a data"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={paymentStartDate}
+                  onSelect={setPaymentStartDate}
+                  initialFocus
+                  className={cn("p-3 pointer-events-auto")}
+                  locale={ptBR}
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
           <div className="space-y-1.5">
             <Label>Contrato de Locação</Label>
             <input
