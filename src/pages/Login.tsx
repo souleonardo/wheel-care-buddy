@@ -85,7 +85,7 @@ export default function Login() {
           <div className="h-16 w-16 rounded-2xl gradient-primary flex items-center justify-center mx-auto shadow-lg">
             <Car className="h-8 w-8 text-primary-foreground" />
           </div>
-          <h1 className="text-2xl font-bold text-foreground">FleetControl</h1>
+          <h1 className="text-2xl font-bold text-foreground">X Locações</h1>
           <p className="text-sm text-muted-foreground">
             {isSignUp ? "Crie sua conta" : "Acesse sua conta"}
           </p>
