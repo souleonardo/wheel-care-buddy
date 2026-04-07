@@ -1,10 +1,12 @@
 import { useFleet } from "@/context/FleetContext";
 import { useEffect, useState, useCallback } from "react";
-import { Clock, CheckCircle2, Wrench, CalendarDays, Car, Package } from "lucide-react";
+import { Clock, CheckCircle2, Wrench, CalendarDays, Car, Package, FileText } from "lucide-react";
 import { MobileLayout } from "@/components/MobileLayout";
 import { AddSupplyUsageDialog } from "@/components/AddSupplyUsageDialog";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
+import { generateRevisionPDF } from "@/lib/generateRevisionPDF";
+import { toast } from "sonner";
 
 interface UsageRecord {
   id: string;
@@ -146,7 +148,24 @@ export default function Workshop() {
                               onUsageAdded={fetchUsage}
                             />
                             <button
-                              onClick={() => updateRevisionStatus(rev.id, "completed")}
+                              onClick={() => {
+                                updateRevisionStatus(rev.id, "completed");
+                                // Generate PDF report
+                                const supplies = (usageMap[rev.id] || []).map((u) => ({
+                                  name: u.supply?.name ?? "—",
+                                  unit: u.supply?.unit ?? "un",
+                                  quantity: u.quantity_used,
+                                }));
+                                generateRevisionPDF({
+                                  vehicleModel: rev.vehicleModel,
+                                  vehiclePlate: rev.vehiclePlate,
+                                  type: rev.type,
+                                  scheduledDate: rev.scheduledDate,
+                                  notes: rev.notes,
+                                  supplies,
+                                });
+                                toast.success("Relatório PDF gerado!");
+                              }}
                               className="text-[11px] font-medium px-3 py-1.5 rounded-lg bg-success/15 text-success hover:bg-success/25 transition-colors"
                             >
                               Concluir Serviço
@@ -177,6 +196,27 @@ export default function Workshop() {
                     </div>
                   </div>
                   {renderUsageList(rev.id)}
+                  <button
+                    onClick={() => {
+                      const supplies = (usageMap[rev.id] || []).map((u) => ({
+                        name: u.supply?.name ?? "—",
+                        unit: u.supply?.unit ?? "un",
+                        quantity: u.quantity_used,
+                      }));
+                      generateRevisionPDF({
+                        vehicleModel: rev.vehicleModel,
+                        vehiclePlate: rev.vehiclePlate,
+                        type: rev.type,
+                        scheduledDate: rev.scheduledDate,
+                        notes: rev.notes,
+                        supplies,
+                      });
+                    }}
+                    className="mt-2 text-[11px] font-medium px-3 py-1.5 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors flex items-center gap-1"
+                  >
+                    <FileText className="h-3 w-3" />
+                    Baixar Relatório PDF
+                  </button>
                 </div>
               ))}
             </div>
