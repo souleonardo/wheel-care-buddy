@@ -50,7 +50,7 @@ Deno.serve(async (req) => {
     }
 
     // Parse and validate input
-    const { email, password, fullName, role } = await req.json();
+    const { email, password, fullName, role, cpf, cnhNumber, cnhExpiryDate } = await req.json();
     if (!email || !password || !fullName || !role) {
       return new Response(JSON.stringify({ error: "Campos obrigatórios: email, password, fullName, role" }), {
         status: 400,
@@ -59,6 +59,12 @@ Deno.serve(async (req) => {
     }
     if (!["locador", "mecanico"].includes(role)) {
       return new Response(JSON.stringify({ error: "Role deve ser 'locador' ou 'mecanico'" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    if (role === "locador" && (!cpf || !cnhExpiryDate)) {
+      return new Response(JSON.stringify({ error: "CPF e Validade da CNH são obrigatórios para locadores" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -90,6 +96,19 @@ Deno.serve(async (req) => {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+    }
+
+    // Update profile with CPF/CNH if locador
+    if (role === "locador" && (cpf || cnhNumber || cnhExpiryDate)) {
+      const profileUpdate: Record<string, string> = {};
+      if (cpf) profileUpdate.cpf = cpf;
+      if (cnhNumber) profileUpdate.cnh_number = cnhNumber;
+      if (cnhExpiryDate) profileUpdate.cnh_expiry_date = cnhExpiryDate;
+
+      await adminClient
+        .from("profiles")
+        .update(profileUpdate)
+        .eq("user_id", newUser.user.id);
     }
 
     return new Response(

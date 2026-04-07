@@ -186,6 +186,9 @@ export type Database = {
       }
       profiles: {
         Row: {
+          cnh_expiry_date: string | null
+          cnh_number: string | null
+          cpf: string | null
           created_at: string
           full_name: string
           id: string
@@ -193,6 +196,9 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          cnh_expiry_date?: string | null
+          cnh_number?: string | null
+          cpf?: string | null
           created_at?: string
           full_name: string
           id?: string
@@ -200,6 +206,9 @@ export type Database = {
           user_id: string
         }
         Update: {
+          cnh_expiry_date?: string | null
+          cnh_number?: string | null
+          cpf?: string | null
           created_at?: string
           full_name?: string
           id?: string
