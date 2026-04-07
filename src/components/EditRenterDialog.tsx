@@ -71,11 +71,12 @@ export function EditRenterDialog({ vehicle }: EditRenterDialogProps) {
           .limit(1);
 
         if (assignments && assignments.length > 0) {
-          const updateData: Record<string, any> = { payment_frequency: frequency };
-          if (contractUrl) updateData.contract_url = contractUrl;
           await supabase
             .from("vehicle_assignments")
-            .update(updateData)
+            .update({
+              payment_frequency: frequency,
+              ...(contractUrl ? { contract_url: contractUrl } : {}),
+            })
             .eq("id", assignments[0].id);
         }
       } catch (err) {
