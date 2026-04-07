@@ -124,6 +124,50 @@ export type Database = {
           },
         ]
       }
+      labor_charges: {
+        Row: {
+          amount: number
+          created_at: string
+          description: string
+          id: string
+          mechanic_id: string
+          paid_date: string | null
+          revision_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          description?: string
+          id?: string
+          mechanic_id: string
+          paid_date?: string | null
+          revision_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          description?: string
+          id?: string
+          mechanic_id?: string
+          paid_date?: string | null
+          revision_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "labor_charges_revision_id_fkey"
+            columns: ["revision_id"]
+            isOneToOne: false
+            referencedRelation: "revisions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payments: {
         Row: {
           amount: number
