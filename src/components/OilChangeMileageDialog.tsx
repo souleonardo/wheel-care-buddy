@@ -29,20 +29,28 @@ export function OilChangeMileageDialog({
   onConfirm,
 }: OilChangeMileageDialogProps) {
   const [currentKm, setCurrentKm] = useState("");
-  const [nextOilChangeKm, setNextOilChangeKm] = useState("");
+  const [selectedRange, setSelectedRange] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const nextOilChangeKm = useMemo(() => {
+    const km = Number(currentKm);
+    const range = Number(selectedRange);
+    if (km > 0 && range > 0) return km + range;
+    return 0;
+  }, [currentKm, selectedRange]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const km = Number(currentKm);
-    const nextKm = Number(nextOilChangeKm);
 
     if (!km || km <= 0) {
       toast.error("Informe a quilometragem atual");
       return;
     }
-    if (!nextKm || nextKm <= km) {
-      toast.error("A próxima troca deve ser maior que a km atual");
+    if (!nextOilChangeKm) {
+      toast.error("Selecione o intervalo da próxima troca");
+      return;
+    }
       return;
     }
 
