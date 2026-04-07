@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -17,6 +18,7 @@ interface Props {
 export function LaborChargeDialog({ open, onOpenChange, revisionLabel, onConfirm, onSkip }: Props) {
   const [amount, setAmount] = useState("");
   const [description, setDescription] = useState("Mão de obra");
+  const [confirmSkip, setConfirmSkip] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,6 +31,7 @@ export function LaborChargeDialog({ open, onOpenChange, revisionLabel, onConfirm
   };
 
   const handleSkip = () => {
+    setConfirmSkip(false);
     setAmount("");
     setDescription("Mão de obra");
     onSkip();
@@ -71,7 +74,7 @@ export function LaborChargeDialog({ open, onOpenChange, revisionLabel, onConfirm
             />
           </div>
           <div className="flex gap-2">
-            <Button type="button" variant="outline" onClick={handleSkip} className="flex-1 text-xs">
+            <Button type="button" variant="outline" onClick={() => setConfirmSkip(true)} className="flex-1 text-xs">
               Sem mão de obra
             </Button>
             <Button
@@ -84,6 +87,20 @@ export function LaborChargeDialog({ open, onOpenChange, revisionLabel, onConfirm
           </div>
         </form>
       </DialogContent>
+      <AlertDialog open={confirmSkip} onOpenChange={setConfirmSkip}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Finalizar sem mão de obra?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Deseja realmente finalizar este serviço sem lançar a mão de obra?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Não</AlertDialogCancel>
+            <AlertDialogAction onClick={handleSkip}>Sim</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 }
