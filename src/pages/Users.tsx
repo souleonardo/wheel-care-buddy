@@ -30,7 +30,7 @@ interface UserWithRole {
 
 const roleBadge: Record<AppRole, { label: string; variant: "default" | "secondary" | "outline" }> = {
   admin: { label: "Administrador", variant: "default" },
-  locador: { label: "Locador", variant: "secondary" },
+  locador: { label: "Locatário", variant: "secondary" },
   mecanico: { label: "Mecânico", variant: "outline" },
 };
 

@@ -142,7 +142,7 @@ export function EditUserDialog({ user, open, onOpenChange, onSaved }: EditUserDi
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="admin">Administrador</SelectItem>
-                <SelectItem value="locador">Locador</SelectItem>
+                <SelectItem value="locador">Locatário</SelectItem>
                 <SelectItem value="mecanico">Mecânico</SelectItem>
               </SelectContent>
             </Select>

@@ -38,7 +38,7 @@ export function MobileLayout({ children, title }: MobileLayoutProps) {
 
   const roleLabels: Record<AppRole, string> = {
     admin: "Administrador",
-    locador: "Locador",
+    locador: "Locatário",
     mecanico: "Mecânico",
   };
 
