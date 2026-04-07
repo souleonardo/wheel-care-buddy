@@ -81,6 +81,7 @@ export function EditRenterDialog({ vehicle }: EditRenterDialogProps) {
             .from("vehicle_assignments")
             .update({
               payment_frequency: frequency,
+              ...(paymentStartDate ? { payment_start_date: format(paymentStartDate, "yyyy-MM-dd") } : {}),
               ...(contractUrl ? { contract_url: contractUrl } : {}),
             })
             .eq("id", assignments[0].id);
