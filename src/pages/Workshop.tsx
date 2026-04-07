@@ -234,12 +234,20 @@ export default function Workshop() {
     updateRevisionStatus(rev.id, "completed");
 
     // Fetch fresh usage data from DB to avoid stale state
-    const { data: freshUsage } = await supabase
+    const { data: freshUsage, error: usageError } = await supabase
       .from("supply_usage")
       .select("id, revision_id, quantity_used, supply:supplies(name, unit, unit_cost, is_billable, is_labor_billable)")
       .eq("revision_id", rev.id);
 
-    const usageItems: UsageRecord[] = (freshUsage as any[]) ?? [];
+    if (usageError) {
+      console.error("Error fetching supply usage:", usageError);
+    }
+
+    // Normalize supply field (may come as array or object from PostgREST)
+    const usageItems: UsageRecord[] = ((freshUsage as any[]) ?? []).map((u: any) => ({
+      ...u,
+      supply: Array.isArray(u.supply) ? u.supply[0] ?? null : u.supply,
+    }));
 
     // Get active renter for this vehicle
     const { data: assignment } = await supabase
@@ -259,6 +267,8 @@ export default function Workshop() {
     // Determine billability per supply item
     const hasBillableItems = usageItems.some((u) => u.supply?.is_billable);
     const hasLaborBillableItems = usageItems.some((u) => u.supply?.is_labor_billable);
+
+    console.log("[Invoice] Revision:", rev.id, "Vehicle:", rev.vehicleId, "Renter:", assignment?.renter_id, "Usage items:", usageItems.length, "Billable:", hasBillableItems);
 
     // Always generate invoice if there's a renter (all items listed, only billable ones charged)
     if (assignment?.renter_id) {
@@ -281,6 +291,8 @@ export default function Workshop() {
       const dueDate = new Date();
       dueDate.setDate(dueDate.getDate() + 7);
 
+      console.log("[Invoice] Creating invoice - Total:", totalBillable, "Items:", items.length, "Due:", dueDate.toISOString().split("T")[0]);
+
       // Create invoice
       const { data: invoice, error: invoiceError } = await supabase
         .from("invoices")
@@ -295,19 +307,26 @@ export default function Workshop() {
         .select("id")
         .single();
 
+      if (invoiceError) {
+        console.error("[Invoice] Error creating invoice:", invoiceError);
+        toast.error("Erro ao criar fatura: " + invoiceError.message);
+      }
+
       if (!invoiceError && invoice) {
+        console.log("[Invoice] Invoice created:", (invoice as any).id);
         // Insert ALL items (billable and non-billable for transparency)
         if (items.length > 0) {
           const invoiceItems = items.map((i) => ({
             invoice_id: (invoice as any).id,
             ...i,
           }));
-          await supabase.from("invoice_items").insert(invoiceItems as any);
+          const { error: itemsError } = await supabase.from("invoice_items").insert(invoiceItems as any);
+          if (itemsError) console.error("[Invoice] Error inserting items:", itemsError);
         }
 
         // Create payment record only if there's a billable amount
         if (totalBillable > 0) {
-          await supabase.from("payments").insert({
+          const { error: payError } = await supabase.from("payments").insert({
             vehicle_id: rev.vehicleId,
             renter_id: assignment.renter_id,
             amount: totalBillable,
@@ -316,6 +335,7 @@ export default function Workshop() {
             payment_type: "maintenance",
             revision_id: rev.id,
           });
+          if (payError) console.error("[Invoice] Error creating payment:", payError);
         }
 
         toast.success(
@@ -324,6 +344,8 @@ export default function Workshop() {
             : "Fatura informativa gerada (sem cobrança)"
         );
       }
+    } else {
+      console.log("[Invoice] No active renter found for vehicle:", rev.vehicleId);
     }
 
     // Fetch vehicle details for PDF
