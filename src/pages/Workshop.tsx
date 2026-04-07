@@ -7,7 +7,8 @@ import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { generateRevisionPDF } from "@/lib/generateRevisionPDF";
 import { toast } from "sonner";
-import { isServiceBillable } from "@/lib/billableServices";
+import { BillableConfigDialog } from "@/components/BillableConfigDialog";
+import { useAuth } from "@/hooks/useAuth";
 
 interface UsageRecord {
   id: string;
