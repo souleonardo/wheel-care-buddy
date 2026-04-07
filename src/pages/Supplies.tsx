@@ -7,6 +7,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -19,6 +23,8 @@ interface Supply {
   min_quantity: number;
   unit: string;
   unit_cost: number;
+  is_billable: boolean;
+  is_labor_billable: boolean;
 }
 
 const unitLabels: Record<string, string> = {
@@ -41,7 +47,7 @@ export default function Supplies() {
   const [adjustQty, setAdjustQty] = useState(1);
 
   // New supply form
-  const [form, setForm] = useState({ name: "", description: "", quantity: 0, min_quantity: 5, unit: "un", unit_cost: 0 });
+  const [form, setForm] = useState({ name: "", description: "", quantity: 0, min_quantity: 5, unit: "un", unit_cost: 0, is_billable: false, is_labor_billable: false });
 
   const fetchSupplies = async () => {
     const { data, error } = await supabase.from("supplies").select("*").order("name");
@@ -61,10 +67,12 @@ export default function Supplies() {
       min_quantity: form.min_quantity,
       unit: form.unit,
       unit_cost: form.unit_cost,
-    });
+      is_billable: form.is_billable,
+      is_labor_billable: form.is_labor_billable,
+    } as any);
     if (error) { toast.error("Erro ao adicionar suprimento"); return; }
     toast.success("Suprimento adicionado");
-    setForm({ name: "", description: "", quantity: 0, min_quantity: 5, unit: "un", unit_cost: 0 });
+    setForm({ name: "", description: "", quantity: 0, min_quantity: 5, unit: "un", unit_cost: 0, is_billable: false, is_labor_billable: false });
     setAddOpen(false);
     fetchSupplies();
   };
