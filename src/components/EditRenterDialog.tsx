@@ -128,14 +128,14 @@ export function EditRenterDialog({ vehicle }: EditRenterDialogProps) {
 
       // Update vehicle status
       const renter = locadores.find((l) => l.userId === selectedRenterId);
-      updateVehicle(vehicle.id, {
+      await updateVehicle(vehicle.id, {
         renterName: renter?.fullName,
         status: "rented",
       });
 
       toast.success("Locatário atribuído com sucesso!");
       setOpen(false);
-      refreshVehicles();
+      await refreshVehicles();
     } catch (err: any) {
       toast.error("Erro ao atribuir locatário: " + err.message);
     }
