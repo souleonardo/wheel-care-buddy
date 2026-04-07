@@ -419,6 +419,7 @@ export default function Workshop() {
                         <div className="flex flex-wrap gap-2 mt-3">
                           {rev.status === "pending_approval" && (
                             <>
+                              <DaySchedulePopover date={rev.scheduledDate} highlightTime={rev.scheduledTime} />
                               <button
                                 onClick={() => updateRevisionStatus(rev.id, "scheduled")}
                                 className="text-[11px] font-medium px-3 py-1.5 rounded-lg bg-success/15 text-success hover:bg-success/25 transition-colors"
