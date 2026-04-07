@@ -43,7 +43,7 @@ export function MobileLayout({ children, title }: MobileLayoutProps) {
       <header className="sticky top-0 z-40 bg-card/90 backdrop-blur-xl border-b border-border/50 px-4 py-3">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-lg font-bold text-foreground">{title || "FleetControl"}</h1>
+            <h1 className="text-lg font-bold text-foreground">{title || "X Locações"}</h1>
             {role && (
               <div className="flex items-center gap-1.5 mt-0.5">
                 <User className="h-3 w-3 text-muted-foreground" />
