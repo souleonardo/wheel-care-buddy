@@ -85,16 +85,27 @@ export default function Dashboard() {
     setPaymentsLoading(true);
     const { data, error } = await supabase
       .from("payments")
-      .select("id, vehicle_id, renter_id, amount, due_date, status, paid_date, payment_type, vehicle:vehicles(plate), renter:profiles!payments_renter_id_fkey(full_name)")
+      .select("id, vehicle_id, renter_id, amount, due_date, status, paid_date, payment_type, vehicle:vehicles(plate)")
       .gte("due_date", fromStr)
       .lte("due_date", toStr)
       .order("due_date", { ascending: false });
 
     if (!error && data) {
-      setDbPayments(data.map((p: any) => ({
+      // Fetch renter names
+      const renterIds = [...new Set((data as any[]).map((p) => p.renter_id))];
+      let profileMap: Record<string, string> = {};
+      if (renterIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("user_id, full_name")
+          .in("user_id", renterIds);
+        profileMap = Object.fromEntries((profiles ?? []).map((p) => [p.user_id, p.full_name]));
+      }
+
+      setDbPayments((data as any[]).map((p) => ({
         ...p,
         vehicle: p.vehicle ? (Array.isArray(p.vehicle) ? p.vehicle[0] : p.vehicle) : null,
-        renter: p.renter ? (Array.isArray(p.renter) ? p.renter[0] : p.renter) : null,
+        renter: { full_name: profileMap[p.renter_id] ?? "—" },
       })));
     }
     setPaymentsLoading(false);
