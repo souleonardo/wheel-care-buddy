@@ -7,12 +7,13 @@ import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { generateRevisionPDF } from "@/lib/generateRevisionPDF";
 import { toast } from "sonner";
+import { isServiceBillable } from "@/lib/billableServices";
 
 interface UsageRecord {
   id: string;
   revision_id: string;
   quantity_used: number;
-  supply: { name: string; unit: string } | null;
+  supply: { name: string; unit: string; unit_cost: number } | null;
 }
 
 const statusConfig = {
@@ -34,7 +35,7 @@ export default function Workshop() {
 
     const { data } = await supabase
       .from("supply_usage")
-      .select("id, revision_id, quantity_used, supply:supplies(name, unit)")
+      .select("id, revision_id, quantity_used, supply:supplies(name, unit, unit_cost)")
       .in("revision_id", revisionIds);
 
     if (data) {
