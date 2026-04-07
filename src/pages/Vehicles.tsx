@@ -117,6 +117,7 @@ export default function Vehicles() {
                       vehicleId={vehicle.id}
                       vehiclePlate={vehicle.plate}
                       hasCrlv={!!vehicle.crlvUrl}
+                      crlvUrl={vehicle.crlvUrl}
                       onUploaded={() => refreshVehicles()}
                     />
                     <VehicleHistoryDialog
