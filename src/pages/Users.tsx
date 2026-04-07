@@ -8,8 +8,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, UserPlus, Loader2, Users as UsersIcon } from "lucide-react";
+import { Plus, UserPlus, Loader2, Users as UsersIcon, KeyRound, Mail, Clock } from "lucide-react";
 import { toast } from "sonner";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 type CreateRole = "locador" | "mecanico";
 type AppRole = "admin" | "locador" | "mecanico";
@@ -18,6 +20,8 @@ interface UserWithRole {
   user_id: string;
   full_name: string;
   role: AppRole | null;
+  email?: string;
+  lastSignIn?: string | null;
 }
 
 const roleBadge: Record<AppRole, { label: string; variant: "default" | "secondary" | "outline" }> = {
@@ -38,29 +42,41 @@ export default function Users() {
     role: "locador" as CreateRole,
   });
 
+  // Reset password state
+  const [resetDialogUser, setResetDialogUser] = useState<UserWithRole | null>(null);
+  const [newPassword, setNewPassword] = useState("");
+  const [resetting, setResetting] = useState(false);
+
   const fetchUsers = useCallback(async () => {
     setLoadingUsers(true);
     try {
-      const { data: profiles, error: pErr } = await supabase
-        .from("profiles")
-        .select("user_id, full_name")
-        .order("created_at", { ascending: false });
+      // Fetch profiles and roles
+      const [profilesRes, rolesRes, authUsersRes] = await Promise.all([
+        supabase.from("profiles").select("user_id, full_name").order("created_at", { ascending: false }),
+        supabase.from("user_roles").select("user_id, role"),
+        supabase.functions.invoke("manage-users", { body: { action: "list" } }),
+      ]);
 
-      if (pErr) throw pErr;
+      if (profilesRes.error) throw profilesRes.error;
+      if (rolesRes.error) throw rolesRes.error;
 
-      const { data: roles, error: rErr } = await supabase
-        .from("user_roles")
-        .select("user_id, role");
+      const roleMap = new Map(rolesRes.data?.map((r) => [r.user_id, r.role as AppRole]));
 
-      if (rErr) throw rErr;
-
-      const roleMap = new Map(roles?.map((r) => [r.user_id, r.role as AppRole]));
+      // Map auth users for email/last sign in
+      const authMap = new Map<string, { email: string; lastSignIn: string | null }>();
+      if (authUsersRes.data?.users) {
+        for (const u of authUsersRes.data.users) {
+          authMap.set(u.id, { email: u.email, lastSignIn: u.last_sign_in_at });
+        }
+      }
 
       setUsers(
-        (profiles ?? []).map((p) => ({
+        (profilesRes.data ?? []).map((p) => ({
           user_id: p.user_id,
           full_name: p.full_name,
           role: roleMap.get(p.user_id) ?? null,
+          email: authMap.get(p.user_id)?.email,
+          lastSignIn: authMap.get(p.user_id)?.lastSignIn,
         }))
       );
     } catch (err) {
@@ -100,6 +116,39 @@ export default function Users() {
       toast.error(err.message || "Erro ao criar usuário");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleResetPassword = async () => {
+    if (!resetDialogUser || !newPassword) return;
+    setResetting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("manage-users", {
+        body: {
+          action: "reset_password",
+          userId: resetDialogUser.user_id,
+          newPassword,
+        },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      toast.success(`Senha de ${resetDialogUser.full_name} atualizada!`);
+      setResetDialogUser(null);
+      setNewPassword("");
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao resetar senha");
+    } finally {
+      setResetting(false);
+    }
+  };
+
+  const formatLastSignIn = (dateStr: string | null | undefined) => {
+    if (!dateStr) return "Nunca";
+    try {
+      return format(new Date(dateStr), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
+    } catch {
+      return dateStr;
     }
   };
 
@@ -193,13 +242,41 @@ export default function Users() {
               const badge = u.role ? roleBadge[u.role] : null;
               return (
                 <Card key={u.user_id}>
-                  <CardContent className="flex items-center justify-between p-3">
-                    <span className="text-sm font-medium truncate">{u.full_name}</span>
-                    {badge && (
-                      <Badge variant={badge.variant} className="shrink-0 ml-2">
-                        {badge.label}
-                      </Badge>
-                    )}
+                  <CardContent className="p-3 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium truncate">{u.full_name}</span>
+                      <div className="flex items-center gap-1.5 shrink-0 ml-2">
+                        {badge && (
+                          <Badge variant={badge.variant}>
+                            {badge.label}
+                          </Badge>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-muted-foreground hover:text-primary"
+                          onClick={() => {
+                            setResetDialogUser(u);
+                            setNewPassword("");
+                          }}
+                          title="Resetar senha"
+                        >
+                          <KeyRound className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="flex flex-col gap-0.5 text-xs text-muted-foreground">
+                      {u.email && (
+                        <div className="flex items-center gap-1.5">
+                          <Mail className="h-3 w-3 shrink-0" />
+                          <span className="truncate">{u.email}</span>
+                        </div>
+                      )}
+                      <div className="flex items-center gap-1.5">
+                        <Clock className="h-3 w-3 shrink-0" />
+                        <span>Último acesso: {formatLastSignIn(u.lastSignIn)}</span>
+                      </div>
+                    </div>
                   </CardContent>
                 </Card>
               );
@@ -207,6 +284,46 @@ export default function Users() {
           </div>
         )}
       </div>
+
+      {/* Reset Password Dialog */}
+      <Dialog open={!!resetDialogUser} onOpenChange={(v) => { if (!v) setResetDialogUser(null); }}>
+        <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <KeyRound className="h-5 w-5" />
+              Resetar Senha
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Definir nova senha para <strong>{resetDialogUser?.full_name}</strong>
+              {resetDialogUser?.email && (
+                <span className="block text-xs mt-0.5">{resetDialogUser.email}</span>
+              )}
+            </p>
+            <div className="space-y-1.5">
+              <Label htmlFor="newPassword">Nova senha</Label>
+              <Input
+                id="newPassword"
+                type="text"
+                placeholder="Mínimo 6 caracteres"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                minLength={6}
+                autoFocus
+              />
+            </div>
+            <Button
+              className="w-full gradient-primary text-primary-foreground"
+              disabled={resetting || newPassword.length < 6}
+              onClick={handleResetPassword}
+            >
+              {resetting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              Atualizar Senha
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </MobileLayout>
   );
 }
