@@ -582,6 +582,22 @@ export default function Workshop() {
           notesDialog.pendingComplete?.(notes);
         }}
       />
+
+      {/* Labor Charge Dialog */}
+      <LaborChargeDialog
+        open={laborDialog.open}
+        onOpenChange={(open) => {
+          if (!open) setLaborDialog((prev) => ({ ...prev, open: false }));
+        }}
+        revisionLabel={laborDialog.revisionLabel}
+        onConfirm={async (data) => {
+          await saveLaborCharge(laborDialog.revisionId, data);
+          laborDialog.pendingContinue?.();
+        }}
+        onSkip={() => {
+          laborDialog.pendingContinue?.();
+        }}
+      />
     </MobileLayout>
   );
 }
