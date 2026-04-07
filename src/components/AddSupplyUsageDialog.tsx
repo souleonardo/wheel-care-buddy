@@ -14,6 +14,7 @@ interface Supply {
   name: string;
   quantity: number;
   unit: string;
+  unit_cost: number;
 }
 
 interface UsageItem {
@@ -24,10 +25,17 @@ interface UsageItem {
   maxQuantity: number;
 }
 
+interface AddedItem {
+  name: string;
+  unit: string;
+  quantity: number;
+  unitCost: number;
+}
+
 interface AddSupplyUsageDialogProps {
   revisionId: string;
   revisionLabel: string;
-  onUsageAdded?: () => void;
+  onUsageAdded?: (items: AddedItem[]) => void;
 }
 
 export function AddSupplyUsageDialog({ revisionId, revisionLabel, onUsageAdded }: AddSupplyUsageDialogProps) {
@@ -48,7 +56,7 @@ export function AddSupplyUsageDialog({ revisionId, revisionLabel, onUsageAdded }
   const fetchSupplies = async () => {
     const { data } = await supabase
       .from("supplies")
-      .select("id, name, quantity, unit")
+      .select("id, name, quantity, unit, unit_cost")
       .gt("quantity", 0)
       .order("name");
     if (data) setSupplies(data);
@@ -133,11 +141,17 @@ export function AddSupplyUsageDialog({ revisionId, revisionLabel, onUsageAdded }
     }
 
     toast.success("Itens registrados com sucesso!");
+    const addedItems = items.map((item) => ({
+      name: item.supplyName,
+      unit: item.unit,
+      quantity: item.quantityUsed,
+      unitCost: supplies.find((s) => s.id === item.supplyId)?.unit_cost ?? 0,
+    }));
     setItems([]);
     setNotes("");
     setOpen(false);
     setLoading(false);
-    onUsageAdded?.();
+    onUsageAdded?.(addedItems);
   };
 
   const availableSupplies = supplies.filter(
