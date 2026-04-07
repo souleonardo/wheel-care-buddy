@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
-import { History, Users, Wrench, Loader2 } from "lucide-react";
+import { History, Users, Wrench, Loader2, FileDown } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -21,6 +21,7 @@ interface AssignmentHistory {
   releasedAt: string | null;
   isActive: boolean;
   frequency: string;
+  contractUrl: string | null;
 }
 
 interface RevisionHistory {
@@ -60,7 +61,7 @@ export function VehicleHistoryDialog({ vehicleId, vehiclePlate, vehicleModel }: 
       const [assignRes, revRes] = await Promise.all([
         supabase
           .from("vehicle_assignments")
-          .select("id, renter_id, assigned_at, released_at, is_active, payment_frequency")
+          .select("id, renter_id, assigned_at, released_at, is_active, payment_frequency, contract_url")
           .eq("vehicle_id", vehicleId)
           .order("assigned_at", { ascending: false }),
         supabase
@@ -89,6 +90,7 @@ export function VehicleHistoryDialog({ vehicleId, vehiclePlate, vehicleModel }: 
             releasedAt: a.released_at,
             isActive: a.is_active,
             frequency: a.payment_frequency,
+            contractUrl: a.contract_url,
           }))
         );
       } else {
@@ -174,6 +176,20 @@ export function VehicleHistoryDialog({ vehicleId, vehiclePlate, vehicleModel }: 
                         {a.releasedAt && <span>Fim: {formatDate(a.releasedAt)}</span>}
                         <span>{frequencyLabels[a.frequency] || a.frequency}</span>
                       </div>
+                      {a.contractUrl && (
+                        <button
+                          onClick={async () => {
+                            const { data } = await supabase.storage
+                              .from("rental-contracts")
+                              .createSignedUrl(a.contractUrl!, 300);
+                            if (data?.signedUrl) window.open(data.signedUrl, "_blank");
+                          }}
+                          className="flex items-center gap-1 text-[11px] text-primary hover:underline mt-1"
+                        >
+                          <FileDown className="h-3 w-3" />
+                          Baixar contrato
+                        </button>
+                      )}
                     </div>
                   ))}
                 </div>
