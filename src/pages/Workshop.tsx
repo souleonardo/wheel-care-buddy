@@ -460,7 +460,7 @@ export default function Workshop() {
                         </div>
                         <div className="flex items-center gap-1">
                           <CalendarDays className="h-3 w-3" />
-                          <span>{new Date(rev.scheduledDate).toLocaleDateString("pt-BR")}</span>
+                          <span>{new Date(rev.scheduledDate).toLocaleDateString("pt-BR")}{rev.scheduledTime ? ` às ${rev.scheduledTime}` : ""}</span>
                         </div>
                       </div>
                       {rev.notes && (
@@ -517,7 +517,7 @@ export default function Workshop() {
                     <CheckCircle2 className="h-4 w-4 text-success shrink-0" />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-foreground truncate">{rev.vehicleModel} — {rev.type}</p>
-                      <p className="text-xs text-muted-foreground">{rev.vehiclePlate} · {new Date(rev.scheduledDate).toLocaleDateString("pt-BR")}</p>
+                      <p className="text-xs text-muted-foreground">{rev.vehiclePlate} · {new Date(rev.scheduledDate).toLocaleDateString("pt-BR")}{rev.scheduledTime ? ` às ${rev.scheduledTime}` : ""}</p>
                     </div>
                   </div>
                   {renderUsageList(rev.id)}

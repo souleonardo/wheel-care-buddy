@@ -61,7 +61,7 @@ export default function Revisions() {
                       </div>
                       <div className="flex items-center gap-1">
                         <CalendarDays className="h-3 w-3" />
-                        <span>{new Date(rev.scheduledDate).toLocaleDateString("pt-BR")}</span>
+                        <span>{new Date(rev.scheduledDate).toLocaleDateString("pt-BR")}{rev.scheduledTime ? ` às ${rev.scheduledTime}` : ""}</span>
                       </div>
                     </div>
                     {rev.notes && (
