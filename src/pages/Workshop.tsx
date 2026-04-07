@@ -612,6 +612,7 @@ export default function Workshop() {
             </div>
           </section>
         )}
+      </div>
 
       {/* Oil Change Mileage Dialog */}
       <OilChangeMileageDialog
