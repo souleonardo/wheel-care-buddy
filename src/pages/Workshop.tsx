@@ -42,6 +42,7 @@ export default function Workshop() {
   const completedRevisions = revisions.filter((r) => r.status === "completed");
 
   const [usageMap, setUsageMap] = useState<Record<string, UsageRecord[]>>({});
+  const [localUsageMap, setLocalUsageMap] = useState<Record<string, { name: string; unit: string; quantity: number; unitCost: number }[]>>({});
   const [billableTypes, setBillableTypes] = useState<Set<string>>(new Set());
   const [oilVehicles, setOilVehicles] = useState<VehicleOilStatus[]>([]);
   const [oilDialog, setOilDialog] = useState<{
