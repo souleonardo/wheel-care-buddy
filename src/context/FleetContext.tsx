@@ -153,6 +153,7 @@ export function FleetProvider({ children }: { children: ReactNode }) {
         vehicleModel: r.vehicle?.model ?? "",
         type: r.type,
         scheduledDate: r.scheduled_date,
+        scheduledTime: r.scheduled_time ?? undefined,
         status: r.status as Revision["status"],
         notes: r.notes ?? undefined,
         mechanicNotes: r.mechanic_notes ?? undefined,
