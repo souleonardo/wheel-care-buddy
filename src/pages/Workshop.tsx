@@ -250,23 +250,26 @@ export default function Workshop() {
       .eq("revision_id", rev.id);
     const laborTotal = (laborChargesData ?? []).reduce((sum, c) => sum + Number(c.amount), 0);
 
-    const isBillableRevision = billableTypes.has(rev.type);
+    // Determine billability per supply item
+    const hasBillableItems = usageItems.some((u) => u.supply?.is_billable);
+    const hasLaborBillableItems = usageItems.some((u) => u.supply?.is_labor_billable);
 
-    // Generate invoice if there's a renter AND (has parts, has labor, or is billable type)
-    if (assignment?.renter_id && (usageItems.length > 0 || laborTotal > 0 || isBillableRevision)) {
+    // Generate invoice if there's a renter AND (has parts or labor)
+    if (assignment?.renter_id && (usageItems.length > 0 || laborTotal > 0)) {
       const items = usageItems.map((u) => ({
         supply_name: u.supply?.name ?? "—",
         quantity: u.quantity_used,
         unit: u.supply?.unit ?? "un",
         unit_cost: Number(u.supply?.unit_cost ?? 0),
-        is_billable: isBillableRevision,
+        is_billable: u.supply?.is_billable ?? false,
       }));
 
       const partsTotal = items
         .filter((i) => i.is_billable)
         .reduce((sum, i) => sum + i.quantity * i.unit_cost, 0);
 
-      const totalBillable = partsTotal + (isBillableRevision ? laborTotal : 0);
+      const billableLaborTotal = hasLaborBillableItems ? laborTotal : 0;
+      const totalBillable = partsTotal + billableLaborTotal;
 
       const dueDate = new Date();
       dueDate.setDate(dueDate.getDate() + 7);
@@ -374,11 +377,6 @@ export default function Workshop() {
           })}
         </div>
 
-        {isAdmin && (
-          <div className="flex justify-end">
-            <BillableConfigDialog onUpdated={fetchBillableTypes} />
-          </div>
-        )}
 
         {/* New Requests (pending_approval + scheduled) */}
         {pendingRevisions.length > 0 && (
