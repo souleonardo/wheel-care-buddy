@@ -1,4 +1,5 @@
-import { createContext, useContext, useState, ReactNode, useCallback } from "react";
+import { createContext, useContext, useState, ReactNode, useCallback, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 export interface Vehicle {
   id: string;
@@ -32,6 +33,7 @@ export interface Revision {
   scheduledDate: string;
   status: "scheduled" | "in_progress" | "completed";
   notes?: string;
+  mechanicNotes?: string;
 }
 
 const initialVehicles: Vehicle[] = [
@@ -52,23 +54,18 @@ const initialPayments: Payment[] = [
   { id: "6", vehicleId: "1", renterName: "Carlos Silva", vehiclePlate: "ABC-1234", amount: 800, dueDate: "2026-03-10", status: "paid", paidDate: "2026-03-10" },
 ];
 
-const initialRevisions: Revision[] = [
-  { id: "1", vehicleId: "4", vehiclePlate: "JKL-3456", vehicleModel: "Fiat Argo", type: "Troca de óleo", scheduledDate: "2026-03-20", status: "in_progress", notes: "Óleo sintético 5W30" },
-  { id: "2", vehicleId: "2", vehiclePlate: "DEF-5678", vehicleModel: "Honda Civic", type: "Revisão completa", scheduledDate: "2026-03-25", status: "scheduled" },
-  { id: "3", vehicleId: "1", vehiclePlate: "ABC-1234", vehicleModel: "Toyota Corolla", type: "Alinhamento e balanceamento", scheduledDate: "2026-04-01", status: "scheduled" },
-  { id: "4", vehicleId: "3", vehiclePlate: "GHI-9012", vehicleModel: "Volkswagen Gol", type: "Troca de pastilhas de freio", scheduledDate: "2026-04-15", status: "scheduled" },
-];
-
 interface FleetContextType {
   vehicles: Vehicle[];
   payments: Payment[];
   revisions: Revision[];
+  revisionsLoading: boolean;
   addVehicle: (v: Omit<Vehicle, "id">) => void;
   removeVehicle: (id: string) => void;
   updateVehicle: (id: string, updates: Partial<Omit<Vehicle, "id">>) => void;
   addRevision: (r: Omit<Revision, "id">) => void;
   markPaymentPaid: (id: string) => void;
   updateRevisionStatus: (id: string, status: Revision["status"]) => void;
+  refreshRevisions: () => Promise<void>;
 }
 
 const FleetContext = createContext<FleetContextType | null>(null);
@@ -76,7 +73,42 @@ const FleetContext = createContext<FleetContextType | null>(null);
 export function FleetProvider({ children }: { children: ReactNode }) {
   const [vehicles, setVehicles] = useState<Vehicle[]>(initialVehicles);
   const [payments, setPayments] = useState<Payment[]>(initialPayments);
-  const [revisions, setRevisions] = useState<Revision[]>(initialRevisions);
+  const [revisions, setRevisions] = useState<Revision[]>([]);
+  const [revisionsLoading, setRevisionsLoading] = useState(true);
+
+  // Fetch revisions from database
+  const fetchRevisions = useCallback(async () => {
+    const { data, error } = await supabase
+      .from("revisions")
+      .select("id, vehicle_id, type, scheduled_date, status, notes, mechanic_notes, vehicle:vehicles(plate, model)")
+      .order("scheduled_date", { ascending: false });
+
+    if (error) {
+      console.error("Error fetching revisions:", error);
+      setRevisionsLoading(false);
+      return;
+    }
+
+    if (data) {
+      const mapped: Revision[] = (data as any[]).map((r) => ({
+        id: r.id,
+        vehicleId: r.vehicle_id,
+        vehiclePlate: r.vehicle?.plate ?? "",
+        vehicleModel: r.vehicle?.model ?? "",
+        type: r.type,
+        scheduledDate: r.scheduled_date,
+        status: r.status as Revision["status"],
+        notes: r.notes ?? undefined,
+        mechanicNotes: r.mechanic_notes ?? undefined,
+      }));
+      setRevisions(mapped);
+    }
+    setRevisionsLoading(false);
+  }, []);
+
+  useEffect(() => {
+    fetchRevisions();
+  }, [fetchRevisions]);
 
   const addVehicle = useCallback((v: Omit<Vehicle, "id">) => {
     setVehicles((prev) => [...prev, { ...v, id: crypto.randomUUID() }]);
@@ -92,9 +124,26 @@ export function FleetProvider({ children }: { children: ReactNode }) {
     );
   }, []);
 
-  const addRevision = useCallback((r: Omit<Revision, "id">) => {
-    setRevisions((prev) => [...prev, { ...r, id: crypto.randomUUID() }]);
-  }, []);
+  const addRevision = useCallback(async (r: Omit<Revision, "id">) => {
+    const { data: userData } = await supabase.auth.getUser();
+    const userId = userData?.user?.id;
+
+    const { error } = await supabase.from("revisions").insert({
+      vehicle_id: r.vehicleId,
+      type: r.type,
+      scheduled_date: r.scheduledDate,
+      status: r.status,
+      notes: r.notes || null,
+      requested_by: userId || null,
+    });
+
+    if (error) {
+      console.error("Error adding revision:", error);
+      return;
+    }
+
+    await fetchRevisions();
+  }, [fetchRevisions]);
 
   const markPaymentPaid = useCallback((id: string) => {
     setPayments((prev) =>
@@ -104,14 +153,31 @@ export function FleetProvider({ children }: { children: ReactNode }) {
     );
   }, []);
 
-  const updateRevisionStatus = useCallback((id: string, status: Revision["status"]) => {
+  const updateRevisionStatus = useCallback(async (id: string, status: Revision["status"]) => {
+    // Update locally first for instant UI feedback
     setRevisions((prev) =>
       prev.map((r) => (r.id === id ? { ...r, status } : r))
     );
-  }, []);
+
+    // Persist to database
+    const { error } = await supabase
+      .from("revisions")
+      .update({ status })
+      .eq("id", id);
+
+    if (error) {
+      console.error("Error updating revision status:", error);
+      // Revert on error
+      await fetchRevisions();
+    }
+  }, [fetchRevisions]);
 
   return (
-    <FleetContext.Provider value={{ vehicles, payments, revisions, addVehicle, removeVehicle, updateVehicle, addRevision, markPaymentPaid, updateRevisionStatus }}>
+    <FleetContext.Provider value={{
+      vehicles, payments, revisions, revisionsLoading,
+      addVehicle, removeVehicle, updateVehicle, addRevision,
+      markPaymentPaid, updateRevisionStatus, refreshRevisions: fetchRevisions,
+    }}>
       {children}
     </FleetContext.Provider>
   );
