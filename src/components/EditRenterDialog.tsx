@@ -31,6 +31,7 @@ export function EditRenterDialog({ vehicle }: EditRenterDialogProps) {
   const [frequency, setFrequency] = useState("weekly");
   const [uploading, setUploading] = useState(false);
   const [contractFile, setContractFile] = useState<File | null>(null);
+  const [paymentStartDate, setPaymentStartDate] = useState<Date | undefined>(undefined);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
