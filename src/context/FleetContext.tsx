@@ -222,6 +222,9 @@ export function FleetProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const updateRevisionStatus = useCallback(async (id: string, status: Revision["status"]) => {
+    // Find the revision to get vehicleId
+    const revision = revisions.find((r) => r.id === id);
+
     setRevisions((prev) =>
       prev.map((r) => (r.id === id ? { ...r, status } : r))
     );
@@ -234,8 +237,40 @@ export function FleetProvider({ children }: { children: ReactNode }) {
     if (error) {
       console.error("Error updating revision status:", error);
       await fetchRevisions();
+      return;
     }
-  }, [fetchRevisions]);
+
+    // Sync vehicle status based on revision status
+    if (revision) {
+      if (status === "completed") {
+        // Check if vehicle has other active revisions
+        const { data: activeRevs } = await supabase
+          .from("revisions")
+          .select("id")
+          .eq("vehicle_id", revision.vehicleId)
+          .neq("id", id)
+          .in("status", ["scheduled", "in_progress"])
+          .limit(1);
+
+        if (!activeRevs || activeRevs.length === 0) {
+          // No other active revisions — check if vehicle has an active renter
+          const { data: assignments } = await supabase
+            .from("vehicle_assignments")
+            .select("id")
+            .eq("vehicle_id", revision.vehicleId)
+            .eq("is_active", true)
+            .limit(1);
+
+          const newStatus = assignments && assignments.length > 0 ? "rented" : "available";
+          await supabase.from("vehicles").update({ status: newStatus }).eq("id", revision.vehicleId);
+          setVehicles((prev) => prev.map((v) => v.id === revision.vehicleId ? { ...v, status: newStatus as Vehicle["status"] } : v));
+        }
+      } else if (status === "in_progress") {
+        await supabase.from("vehicles").update({ status: "maintenance" }).eq("id", revision.vehicleId);
+        setVehicles((prev) => prev.map((v) => v.id === revision.vehicleId ? { ...v, status: "maintenance" } : v));
+      }
+    }
+  }, [fetchRevisions, revisions]);
 
   return (
     <FleetContext.Provider value={{
