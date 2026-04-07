@@ -50,6 +50,8 @@ export default function Invoices() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [confirmPayId, setConfirmPayId] = useState<string | null>(null);
+  const isAdmin = role === "admin";
 
   const fetchInvoices = useCallback(async () => {
     setLoading(true);
