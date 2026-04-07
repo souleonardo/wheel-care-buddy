@@ -42,7 +42,8 @@ export default function Workshop() {
   const { revisions, updateRevisionStatus } = useFleet();
   const { role } = useAuth();
   const isAdmin = role === "admin";
-  const activeRevisions = revisions.filter((r) => r.status !== "completed" && r.status !== "rejected");
+  const pendingRevisions = revisions.filter((r) => r.status === "pending_approval" || r.status === "scheduled");
+  const activeRevisions = revisions.filter((r) => r.status === "in_progress");
   const completedRevisions = revisions.filter((r) => r.status === "completed");
 
   const [usageMap, setUsageMap] = useState<Record<string, UsageRecord[]>>({});
@@ -376,48 +377,71 @@ export default function Workshop() {
           </div>
         )}
 
-        {/* Oil Change Status Panel */}
-        {oilVehicles.length > 0 && (
+        {/* New Requests (pending_approval + scheduled) */}
+        {pendingRevisions.length > 0 && (
           <section>
-            <h2 className="text-sm font-semibold text-foreground mb-3 uppercase tracking-wider flex items-center gap-1.5">
-              <Droplets className="h-4 w-4 text-info" />
-              Controle de Troca de Óleo
-            </h2>
-            {urgentOilVehicles.length > 0 && (
-              <div className="bg-destructive/10 border border-destructive/20 rounded-xl p-3 mb-3 flex items-center gap-2">
-                <AlertTriangle className="h-4 w-4 text-destructive shrink-0" />
-                <p className="text-xs text-destructive font-medium">
-                  {urgentOilVehicles.length} veículo(s) com troca de óleo próxima ou vencida
-                </p>
-              </div>
-            )}
-            <div className="space-y-2">
-              {oilVehicles.map((v) => {
-                const status = getOilStatus(v);
-                if (!status) return null;
-                const remaining = v.next_oil_change_km! - v.current_mileage;
+            <h2 className="text-sm font-semibold text-foreground mb-3 uppercase tracking-wider">Novas Solicitações</h2>
+            <div className="space-y-3">
+              {pendingRevisions.map((rev) => {
+                const config = statusConfig[rev.status] ?? fallbackStatusConfig;
+                const StatusIcon = config.icon;
                 return (
-                  <div key={v.id} className="bg-card rounded-xl border border-border/50 p-3 flex items-center gap-3">
-                    <div className={cn("h-9 w-9 rounded-lg flex items-center justify-center shrink-0", status.class)}>
-                      <Droplets className="h-4 w-4" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between">
-                        <p className="text-sm font-medium text-foreground truncate">{v.model}</p>
-                        <span className={cn("text-[10px] font-medium px-2 py-0.5 rounded-full whitespace-nowrap", status.class)}>
-                          {remaining <= 0 ? "Vencida" : `${remaining.toLocaleString("pt-BR")} km`}
-                        </span>
+                  <div key={rev.id} className="bg-card rounded-xl border border-border/50 p-4">
+                    <div className="flex items-start gap-3">
+                      <div className={cn("h-10 w-10 rounded-xl flex items-center justify-center shrink-0", config.class)}>
+                        <StatusIcon className={cn("h-5 w-5", config.iconClass)} />
                       </div>
-                      <div className="flex items-center gap-3 text-[11px] text-muted-foreground mt-0.5">
-                        <span>{v.plate}</span>
-                        <span>Atual: {v.current_mileage.toLocaleString("pt-BR")} km</span>
-                        <span>Próxima: {v.next_oil_change_km!.toLocaleString("pt-BR")} km</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between mb-1">
+                          <h3 className="text-sm font-semibold text-foreground">{rev.vehicleModel}</h3>
+                          <span className={cn("text-[10px] font-medium px-2 py-0.5 rounded-full", config.class)}>
+                            {config.label}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <Car className="h-3 w-3" />
+                          <span>{rev.vehiclePlate}</span>
+                        </div>
+                        <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
+                          <div className="flex items-center gap-1">
+                            <Wrench className="h-3 w-3" />
+                            <span>{rev.type}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <CalendarDays className="h-3 w-3" />
+                            <span>{new Date(rev.scheduledDate).toLocaleDateString("pt-BR")}{rev.scheduledTime ? ` às ${rev.scheduledTime}` : ""}</span>
+                          </div>
+                        </div>
+                        {rev.notes && (
+                          <p className="text-[11px] text-muted-foreground/70 mt-2 italic">📝 {rev.notes}</p>
+                        )}
+                        <div className="flex flex-wrap gap-2 mt-3">
+                          {rev.status === "pending_approval" && (
+                            <>
+                              <button
+                                onClick={() => updateRevisionStatus(rev.id, "scheduled")}
+                                className="text-[11px] font-medium px-3 py-1.5 rounded-lg bg-success/15 text-success hover:bg-success/25 transition-colors"
+                              >
+                                ✅ Aprovar
+                              </button>
+                              <button
+                                onClick={() => updateRevisionStatus(rev.id, "rejected")}
+                                className="text-[11px] font-medium px-3 py-1.5 rounded-lg bg-destructive/15 text-destructive hover:bg-destructive/25 transition-colors"
+                              >
+                                ❌ Rejeitar
+                              </button>
+                            </>
+                          )}
+                          {rev.status === "scheduled" && (
+                            <button
+                              onClick={() => updateRevisionStatus(rev.id, "in_progress")}
+                              className="text-[11px] font-medium px-3 py-1.5 rounded-lg bg-warning/15 text-warning hover:bg-warning/25 transition-colors"
+                            >
+                              Iniciar Serviço
+                            </button>
+                          )}
+                        </div>
                       </div>
-                      {v.last_oil_change_date && (
-                        <p className="text-[10px] text-muted-foreground/70 mt-0.5">
-                          Última troca: {new Date(v.last_oil_change_date).toLocaleDateString("pt-BR")}
-                        </p>
-                      )}
                     </div>
                   </div>
                 );
@@ -426,11 +450,11 @@ export default function Workshop() {
           </section>
         )}
 
-        {/* Active */}
+        {/* Active Services (in_progress) */}
         <section>
           <h2 className="text-sm font-semibold text-foreground mb-3 uppercase tracking-wider">Serviços Ativos</h2>
           {activeRevisions.length === 0 && (
-            <p className="text-sm text-muted-foreground text-center py-8">Nenhum agendamento pendente</p>
+            <p className="text-sm text-muted-foreground text-center py-8">Nenhum serviço em andamento</p>
           )}
           <div className="space-y-3">
             {activeRevisions.map((rev) => {
@@ -466,53 +490,21 @@ export default function Workshop() {
                       {rev.notes && (
                         <p className="text-[11px] text-muted-foreground/70 mt-2 italic">📝 {rev.notes}</p>
                       )}
-
-                      {/* Used supplies */}
-                      {renderUsageList(rev.id, rev.status === "in_progress")}
-
-                      {/* Action Buttons */}
+                      {renderUsageList(rev.id, true)}
                       <div className="flex flex-wrap gap-2 mt-3">
-                        {rev.status === "pending_approval" && (
-                          <>
-                            <button
-                              onClick={() => updateRevisionStatus(rev.id, "scheduled")}
-                              className="text-[11px] font-medium px-3 py-1.5 rounded-lg bg-success/15 text-success hover:bg-success/25 transition-colors"
-                            >
-                              ✅ Aprovar
-                            </button>
-                            <button
-                              onClick={() => updateRevisionStatus(rev.id, "rejected")}
-                              className="text-[11px] font-medium px-3 py-1.5 rounded-lg bg-destructive/15 text-destructive hover:bg-destructive/25 transition-colors"
-                            >
-                              ❌ Rejeitar
-                            </button>
-                          </>
-                        )}
-                        {rev.status === "scheduled" && (
-                          <button
-                            onClick={() => updateRevisionStatus(rev.id, "in_progress")}
-                            className="text-[11px] font-medium px-3 py-1.5 rounded-lg bg-warning/15 text-warning hover:bg-warning/25 transition-colors"
-                          >
-                            Iniciar Serviço
-                          </button>
-                        )}
-                        {rev.status === "in_progress" && (
-                          <>
-                            <AddSupplyUsageDialog
-                              revisionId={rev.id}
-                              revisionLabel={`${rev.vehicleModel} — ${rev.type}`}
-                              onUsageAdded={() => {
-                                fetchUsage();
-                              }}
-                            />
-                            <button
-                              onClick={() => handleCompleteRevision(rev)}
-                              className="text-[11px] font-medium px-3 py-1.5 rounded-lg bg-success/15 text-success hover:bg-success/25 transition-colors"
-                            >
-                              Concluir Serviço
-                            </button>
-                          </>
-                        )}
+                        <AddSupplyUsageDialog
+                          revisionId={rev.id}
+                          revisionLabel={`${rev.vehicleModel} — ${rev.type}`}
+                          onUsageAdded={() => {
+                            fetchUsage();
+                          }}
+                        />
+                        <button
+                          onClick={() => handleCompleteRevision(rev)}
+                          className="text-[11px] font-medium px-3 py-1.5 rounded-lg bg-success/15 text-success hover:bg-success/25 transition-colors"
+                        >
+                          Concluir Serviço
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -567,6 +559,56 @@ export default function Workshop() {
                   </button>
                 </div>
               ))}
+            </div>
+          </section>
+        )}
+
+        {/* Oil Change Status Panel - moved to end */}
+        {oilVehicles.length > 0 && (
+          <section>
+            <h2 className="text-sm font-semibold text-foreground mb-3 uppercase tracking-wider flex items-center gap-1.5">
+              <Droplets className="h-4 w-4 text-info" />
+              Controle de Troca de Óleo
+            </h2>
+            {urgentOilVehicles.length > 0 && (
+              <div className="bg-destructive/10 border border-destructive/20 rounded-xl p-3 mb-3 flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4 text-destructive shrink-0" />
+                <p className="text-xs text-destructive font-medium">
+                  {urgentOilVehicles.length} veículo(s) com troca de óleo próxima ou vencida
+                </p>
+              </div>
+            )}
+            <div className="space-y-2">
+              {oilVehicles.map((v) => {
+                const status = getOilStatus(v);
+                if (!status) return null;
+                const remaining = v.next_oil_change_km! - v.current_mileage;
+                return (
+                  <div key={v.id} className="bg-card rounded-xl border border-border/50 p-3 flex items-center gap-3">
+                    <div className={cn("h-9 w-9 rounded-lg flex items-center justify-center shrink-0", status.class)}>
+                      <Droplets className="h-4 w-4" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-medium text-foreground truncate">{v.model}</p>
+                        <span className={cn("text-[10px] font-medium px-2 py-0.5 rounded-full whitespace-nowrap", status.class)}>
+                          {remaining <= 0 ? "Vencida" : `${remaining.toLocaleString("pt-BR")} km`}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-3 text-[11px] text-muted-foreground mt-0.5">
+                        <span>{v.plate}</span>
+                        <span>Atual: {v.current_mileage.toLocaleString("pt-BR")} km</span>
+                        <span>Próxima: {v.next_oil_change_km!.toLocaleString("pt-BR")} km</span>
+                      </div>
+                      {v.last_oil_change_date && (
+                        <p className="text-[10px] text-muted-foreground/70 mt-0.5">
+                          Última troca: {new Date(v.last_oil_change_date).toLocaleDateString("pt-BR")}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </section>
         )}
