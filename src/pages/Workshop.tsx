@@ -64,6 +64,13 @@ export default function Workshop() {
     pendingComplete: ((notes: string) => void) | null;
   }>({ open: false, revisionLabel: "", pendingComplete: null });
 
+  const [laborDialog, setLaborDialog] = useState<{
+    open: boolean;
+    revisionLabel: string;
+    revisionId: string;
+    pendingContinue: (() => void) | null;
+  }>({ open: false, revisionLabel: "", revisionId: "", pendingContinue: null });
+
   const fetchUsage = useCallback(async () => {
     const revisionIds = revisions.map((r) => r.id);
     if (revisionIds.length === 0) return;
