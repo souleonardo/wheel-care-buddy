@@ -157,6 +157,7 @@ export type Database = {
           id: string
           is_active: boolean
           payment_frequency: string
+          payment_start_date: string | null
           released_at: string | null
           renter_id: string
           vehicle_id: string
@@ -167,6 +168,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           payment_frequency?: string
+          payment_start_date?: string | null
           released_at?: string | null
           renter_id: string
           vehicle_id: string
@@ -177,6 +179,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           payment_frequency?: string
+          payment_start_date?: string | null
           released_at?: string | null
           renter_id?: string
           vehicle_id?: string
