@@ -111,14 +111,17 @@ export function EditRenterDialog({ vehicle }: EditRenterDialogProps) {
       try {
         const { data } = await supabase
           .from("vehicle_assignments")
-          .select("payment_frequency, contract_url")
+          .select("payment_frequency, contract_url, payment_start_date")
           .eq("vehicle_id", vehicle.id)
           .eq("is_active", true)
           .limit(1);
         if (data && data.length > 0) {
           setFrequency((data[0] as any).payment_frequency || "weekly");
+          const startDate = (data[0] as any).payment_start_date;
+          setPaymentStartDate(startDate ? new Date(startDate + "T00:00:00") : undefined);
         } else {
           setFrequency("weekly");
+          setPaymentStartDate(undefined);
         }
       } catch {
         setFrequency("weekly");
