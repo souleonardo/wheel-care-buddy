@@ -142,28 +142,42 @@ export default function Reports() {
   const handleFleet = async () => {
     setLoading("fleet");
     try {
-      let query = supabase.from("vehicles").select("id, plate, model, year, status, weekly_rate, current_mileage");
+      let query = supabase.from("vehicles").select("id, plate, model, year, status, weekly_rate, current_mileage, chassis, renavam, entry_date");
       if (vehicleId !== "all") query = query.eq("id", vehicleId);
 
       const { data: vData, error } = await query;
       if (error) throw error;
 
-      // Get active assignments for renter names
-      const vIds = (vData ?? []).map((v) => v.id);
+      const vIds = (vData ?? []).map((v: any) => v.id);
       let assignments: any[] = [];
+      let debtAgg: Record<string, { count: number; total: number }> = {};
+
       if (vIds.length > 0) {
-        const { data } = await supabase
-          .from("vehicle_assignments")
-          .select("vehicle_id, renter_id")
-          .in("vehicle_id", vIds)
-          .eq("is_active", true);
-        assignments = data ?? [];
+        const [assignRes, debtRes] = await Promise.all([
+          supabase
+            .from("vehicle_assignments")
+            .select("vehicle_id, renter_id")
+            .in("vehicle_id", vIds)
+            .eq("is_active", true),
+          supabase
+            .from("vehicle_debts")
+            .select("vehicle_id, amount, status")
+            .in("vehicle_id", vIds)
+            .eq("status", "pending"),
+        ]);
+        assignments = assignRes.data ?? [];
+        (debtRes.data ?? []).forEach((d: any) => {
+          if (!debtAgg[d.vehicle_id]) debtAgg[d.vehicle_id] = { count: 0, total: 0 };
+          debtAgg[d.vehicle_id].count++;
+          debtAgg[d.vehicle_id].total += Number(d.amount);
+        });
       }
+
       const rMap = Object.fromEntries(renters.map((r) => [r.id, r.name]));
       const assignMap = Object.fromEntries(assignments.map((a: any) => [a.vehicle_id, rMap[a.renter_id] ?? null]));
 
       await generateFleetReport({
-        vehicles: (vData ?? []).map((v) => ({
+        vehicles: (vData ?? []).map((v: any) => ({
           plate: v.plate,
           model: v.model,
           year: v.year,
@@ -171,6 +185,11 @@ export default function Reports() {
           weekly_rate: Number(v.weekly_rate),
           current_mileage: v.current_mileage,
           renter_name: assignMap[v.id] ?? null,
+          chassis: v.chassis,
+          renavam: v.renavam,
+          entry_date: v.entry_date,
+          pending_debts: debtAgg[v.id]?.count ?? 0,
+          total_debt_amount: debtAgg[v.id]?.total ?? 0,
         })),
       });
       toast.success("Relatório de frota gerado!");

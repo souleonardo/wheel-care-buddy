@@ -9,6 +9,8 @@ interface UsedSupply {
 interface RevisionReportData {
   vehicleModel: string;
   vehiclePlate: string;
+  vehicleChassis?: string | null;
+  vehicleRenavam?: string | null;
   type: string;
   scheduledDate: string;
   notes?: string;
@@ -60,6 +62,8 @@ export function generateRevisionPDF(data: RevisionReportData) {
 
   addField("Modelo:", data.vehicleModel);
   addField("Placa:", data.vehiclePlate);
+  if (data.vehicleChassis) addField("Chassi:", data.vehicleChassis);
+  if (data.vehicleRenavam) addField("RENAVAM:", data.vehicleRenavam);
   addField("Tipo de Serviço:", data.type);
   addField("Data Agendada:", new Date(data.scheduledDate).toLocaleDateString("pt-BR"));
 
