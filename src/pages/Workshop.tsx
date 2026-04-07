@@ -1,5 +1,6 @@
 import { useFleet } from "@/context/FleetContext";
 import { Clock, CheckCircle2, Wrench, CalendarDays, Car } from "lucide-react";
+import { MobileLayout } from "@/components/MobileLayout";
 import { cn } from "@/lib/utils";
 
 const statusConfig = {
@@ -14,16 +15,7 @@ export default function Workshop() {
   const completedRevisions = revisions.filter((r) => r.status === "completed");
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-40 bg-card/90 backdrop-blur-xl border-b border-border/50 px-4 py-3">
-        <div className="flex items-center gap-2">
-          <Wrench className="h-5 w-5 text-primary" />
-          <h1 className="text-lg font-bold text-foreground">Oficina — Agendamentos</h1>
-        </div>
-        <p className="text-xs text-muted-foreground mt-0.5">Visualize e atualize o status dos serviços</p>
-      </header>
-
+    <MobileLayout title="Oficina — Agendamentos">
       <div className="p-4 space-y-6">
         {/* Summary */}
         <div className="flex gap-2">
@@ -124,6 +116,6 @@ export default function Workshop() {
           </section>
         )}
       </div>
-    </div>
+    </MobileLayout>
   );
 }
