@@ -30,7 +30,8 @@ async function getAdminCaller(req: Request) {
   });
 
   const { data: { user }, error } = await callerClient.auth.getUser();
-  if (error || !user) throw new Error("Não autorizado");
+  console.log("getUser result:", user?.id, "error:", error?.message);
+  if (error || !user) throw new Error("Não autorizado - usuário inválido");
 
   const { data: isAdmin } = await callerClient.rpc("has_role", {
     _user_id: user.id,
