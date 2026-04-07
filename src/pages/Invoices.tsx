@@ -546,10 +546,15 @@ export default function Invoices() {
                         {isExpanded ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
                       </div>
                     </div>
-                    <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
+                    <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground flex-wrap">
                       <span className="font-semibold text-foreground">R$ {inv.total_amount.toFixed(2)}</span>
                       {inv.status !== "informational" && <span>Venc.: {formatDate(inv.due_date)}</span>}
                       {isRental && <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary font-medium">Aluguel</span>}
+                      {!isRental && inv.status !== "informational" && (
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-warning/15 text-warning font-medium">
+                          Prazo: 7 dias
+                        </span>
+                      )}
                     </div>
                   </button>
                   {isExpanded && (
