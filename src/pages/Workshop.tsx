@@ -4,6 +4,7 @@ import { Clock, CheckCircle2, Wrench, CalendarDays, Car, Package, FileText, Drop
 import { MobileLayout } from "@/components/MobileLayout";
 import { AddSupplyUsageDialog } from "@/components/AddSupplyUsageDialog";
 import { OilChangeMileageDialog } from "@/components/OilChangeMileageDialog";
+import { MechanicNotesDialog } from "@/components/MechanicNotesDialog";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { generateRevisionPDF } from "@/lib/generateRevisionPDF";
@@ -51,6 +52,12 @@ export default function Workshop() {
     revisionId: string;
     pendingComplete: (() => void) | null;
   }>({ open: false, vehicleId: "", vehicleModel: "", vehiclePlate: "", revisionId: "", pendingComplete: null });
+
+  const [notesDialog, setNotesDialog] = useState<{
+    open: boolean;
+    revisionLabel: string;
+    pendingComplete: ((notes: string) => void) | null;
+  }>({ open: false, revisionLabel: "", pendingComplete: null });
 
   const fetchUsage = useCallback(async () => {
     const revisionIds = revisions.map((r) => r.id);
@@ -114,9 +121,41 @@ export default function Workshop() {
 
   const handleCompleteRevision = async (rev: typeof revisions[0]) => {
     const isOilChange = rev.type === "Troca de óleo";
+    const hasPartsRegistered = (usageMap[rev.id] || []).length > 0;
+
+    // If no parts registered, require mechanic notes first
+    if (!hasPartsRegistered) {
+      setNotesDialog({
+        open: true,
+        revisionLabel: `${rev.vehicleModel} — ${rev.type}`,
+        pendingComplete: async (mechanicNotes: string) => {
+          // Save mechanic notes to the revision
+          const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+          if (uuidRegex.test(rev.id)) {
+            await supabase
+              .from("revisions")
+              .update({ mechanic_notes: mechanicNotes })
+              .eq("id", rev.id);
+          }
+
+          if (isOilChange) {
+            setOilDialog({
+              open: true,
+              vehicleId: rev.vehicleId,
+              vehicleModel: rev.vehicleModel,
+              vehiclePlate: rev.vehiclePlate,
+              revisionId: rev.id,
+              pendingComplete: () => finalizeCompletion(rev),
+            });
+          } else {
+            await finalizeCompletion(rev);
+          }
+        },
+      });
+      return;
+    }
 
     if (isOilChange) {
-      // Open mileage dialog first, completion happens after confirm
       setOilDialog({
         open: true,
         vehicleId: rev.vehicleId,
@@ -405,6 +444,18 @@ export default function Workshop() {
         revisionId={oilDialog.revisionId}
         onConfirm={() => {
           oilDialog.pendingComplete?.();
+        }}
+      />
+
+      {/* Mechanic Notes Dialog (when no parts registered) */}
+      <MechanicNotesDialog
+        open={notesDialog.open}
+        onOpenChange={(open) => {
+          if (!open) setNotesDialog((prev) => ({ ...prev, open: false }));
+        }}
+        revisionLabel={notesDialog.revisionLabel}
+        onConfirm={(notes) => {
+          notesDialog.pendingComplete?.(notes);
         }}
       />
     </MobileLayout>
