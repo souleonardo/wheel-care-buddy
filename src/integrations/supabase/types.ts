@@ -121,6 +121,8 @@ export type Database = {
           created_at: string
           id: string
           mechanic_notes: string | null
+          mileage_at_service: number | null
+          next_oil_change_km: number | null
           notes: string | null
           requested_by: string | null
           scheduled_date: string
@@ -133,6 +135,8 @@ export type Database = {
           created_at?: string
           id?: string
           mechanic_notes?: string | null
+          mileage_at_service?: number | null
+          next_oil_change_km?: number | null
           notes?: string | null
           requested_by?: string | null
           scheduled_date: string
@@ -145,6 +149,8 @@ export type Database = {
           created_at?: string
           id?: string
           mechanic_notes?: string | null
+          mileage_at_service?: number | null
+          next_oil_change_km?: number | null
           notes?: string | null
           requested_by?: string | null
           scheduled_date?: string
@@ -310,8 +316,11 @@ export type Database = {
         Row: {
           created_at: string
           crlv_url: string | null
+          current_mileage: number | null
           id: string
+          last_oil_change_date: string | null
           model: string
+          next_oil_change_km: number | null
           next_revision: string | null
           plate: string
           status: string
@@ -322,8 +331,11 @@ export type Database = {
         Insert: {
           created_at?: string
           crlv_url?: string | null
+          current_mileage?: number | null
           id?: string
+          last_oil_change_date?: string | null
           model: string
+          next_oil_change_km?: number | null
           next_revision?: string | null
           plate: string
           status?: string
@@ -334,8 +346,11 @@ export type Database = {
         Update: {
           created_at?: string
           crlv_url?: string | null
+          current_mileage?: number | null
           id?: string
+          last_oil_change_date?: string | null
           model?: string
+          next_oil_change_km?: number | null
           next_revision?: string | null
           plate?: string
           status?: string
