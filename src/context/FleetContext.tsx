@@ -85,6 +85,34 @@ export function FleetProvider({ children }: { children: ReactNode }) {
     }
 
     if (data) {
+      // Fetch active assignments with renter names
+      const vehicleIds = data.map((v) => v.id);
+      let renterMap: Record<string, string> = {};
+
+      if (vehicleIds.length > 0) {
+        const { data: assignments } = await supabase
+          .from("vehicle_assignments")
+          .select("vehicle_id, renter_id")
+          .in("vehicle_id", vehicleIds)
+          .eq("is_active", true);
+
+        if (assignments && assignments.length > 0) {
+          const renterIds = [...new Set(assignments.map((a) => a.renter_id))];
+          const { data: profiles } = await supabase
+            .from("profiles")
+            .select("user_id, full_name")
+            .in("user_id", renterIds);
+
+          const profileMap = Object.fromEntries(
+            (profiles ?? []).map((p) => [p.user_id, p.full_name])
+          );
+
+          assignments.forEach((a) => {
+            renterMap[a.vehicle_id] = profileMap[a.renter_id] ?? "";
+          });
+        }
+      }
+
       const mapped: Vehicle[] = data.map((v) => ({
         id: v.id,
         plate: v.plate,
@@ -94,6 +122,7 @@ export function FleetProvider({ children }: { children: ReactNode }) {
         weeklyRate: Number(v.weekly_rate),
         nextRevision: v.next_revision ?? undefined,
         crlvUrl: v.crlv_url ?? undefined,
+        renterName: renterMap[v.id] || undefined,
       }));
       setVehicles(mapped);
     }
