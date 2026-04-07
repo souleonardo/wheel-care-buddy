@@ -334,7 +334,6 @@ export default function Users() {
                         >
                           <KeyRound className="h-3.5 w-3.5" />
                         </Button>
-                        </Button>
                       </div>
                     </div>
                     <div className="flex flex-col gap-0.5 text-xs text-muted-foreground">
