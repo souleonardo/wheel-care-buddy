@@ -4,11 +4,14 @@ import { useFleet } from "@/context/FleetContext";
 import { Clock, CheckCircle2, Wrench, CalendarDays } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const statusConfig = {
+const statusConfig: Record<string, { label: string; icon: typeof CalendarDays; class: string; iconClass: string }> = {
+  pending_approval: { label: "Pendente", icon: Clock, class: "bg-muted text-muted-foreground", iconClass: "text-muted-foreground" },
   scheduled: { label: "Agendada", icon: CalendarDays, class: "bg-info/15 text-info", iconClass: "text-info" },
   in_progress: { label: "Em andamento", icon: Clock, class: "bg-warning/15 text-warning", iconClass: "text-warning" },
   completed: { label: "Concluída", icon: CheckCircle2, class: "bg-success/15 text-success", iconClass: "text-success" },
 };
+
+const fallbackConfig = { label: "Desconhecido", icon: Clock, class: "bg-muted text-muted-foreground", iconClass: "text-muted-foreground" };
 
 export default function Revisions() {
   const { revisions } = useFleet();
@@ -35,7 +38,7 @@ export default function Revisions() {
 
         <div className="space-y-3">
           {revisions.map((rev) => {
-            const config = statusConfig[rev.status];
+            const config = statusConfig[rev.status] ?? fallbackConfig;
             const StatusIcon = config.icon;
             return (
               <div key={rev.id} className="bg-card rounded-xl border border-border/50 p-4">
