@@ -188,6 +188,7 @@ export type Database = {
       vehicles: {
         Row: {
           created_at: string
+          crlv_url: string | null
           id: string
           model: string
           next_revision: string | null
@@ -199,6 +200,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          crlv_url?: string | null
           id?: string
           model: string
           next_revision?: string | null
@@ -210,6 +212,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          crlv_url?: string | null
           id?: string
           model?: string
           next_revision?: string | null
