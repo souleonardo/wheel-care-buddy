@@ -176,6 +176,20 @@ export function VehicleHistoryDialog({ vehicleId, vehiclePlate, vehicleModel }: 
                         {a.releasedAt && <span>Fim: {formatDate(a.releasedAt)}</span>}
                         <span>{frequencyLabels[a.frequency] || a.frequency}</span>
                       </div>
+                      {a.contractUrl && (
+                        <button
+                          onClick={async () => {
+                            const { data } = await supabase.storage
+                              .from("rental-contracts")
+                              .createSignedUrl(a.contractUrl!, 300);
+                            if (data?.signedUrl) window.open(data.signedUrl, "_blank");
+                          }}
+                          className="flex items-center gap-1 text-[11px] text-primary hover:underline mt-1"
+                        >
+                          <FileDown className="h-3 w-3" />
+                          Baixar contrato
+                        </button>
+                      )}
                     </div>
                   ))}
                 </div>
