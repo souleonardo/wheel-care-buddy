@@ -42,7 +42,8 @@ export default function Workshop() {
   const { revisions, updateRevisionStatus } = useFleet();
   const { role } = useAuth();
   const isAdmin = role === "admin";
-  const activeRevisions = revisions.filter((r) => r.status !== "completed" && r.status !== "rejected");
+  const pendingRevisions = revisions.filter((r) => r.status === "pending_approval" || r.status === "scheduled");
+  const activeRevisions = revisions.filter((r) => r.status === "in_progress");
   const completedRevisions = revisions.filter((r) => r.status === "completed");
 
   const [usageMap, setUsageMap] = useState<Record<string, UsageRecord[]>>({});
