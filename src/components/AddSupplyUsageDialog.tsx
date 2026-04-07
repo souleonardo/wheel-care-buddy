@@ -56,7 +56,7 @@ export function AddSupplyUsageDialog({ revisionId, revisionLabel, onUsageAdded }
   const fetchSupplies = async () => {
     const { data } = await supabase
       .from("supplies")
-      .select("id, name, quantity, unit")
+      .select("id, name, quantity, unit, unit_cost")
       .gt("quantity", 0)
       .order("name");
     if (data) setSupplies(data);
