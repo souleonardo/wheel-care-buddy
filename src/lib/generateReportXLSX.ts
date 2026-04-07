@@ -133,18 +133,29 @@ export async function generateFleetReport(data: {
     weekly_rate: number;
     current_mileage: number | null;
     renter_name: string | null;
+    chassis: string | null;
+    renavam: string | null;
+    entry_date: string | null;
+    pending_debts: number;
+    total_debt_amount: number;
   }>;
 }) {
   const wb = new ExcelJS.Workbook();
   const ws = wb.addWorksheet("Frota");
 
-  ws.addRow(["Placa", "Modelo", "Ano", "Status", "Valor Semanal (R$)", "Km Atual", "Locatário"]);
+  ws.addRow(["Placa", "Modelo", "Ano", "Chassi", "RENAVAM", "Entrada", "Status", "Valor Semanal (R$)", "Km Atual", "Locatário", "Débitos Pend.", "Total Débitos (R$)"]);
   styleHeader(ws);
   const statusMap: Record<string, string> = { available: "Disponível", rented: "Alugado", maintenance: "Manutenção" };
   data.vehicles.forEach((v) => {
-    ws.addRow([v.plate, v.model, v.year, statusMap[v.status] ?? v.status, v.weekly_rate, v.current_mileage ?? "—", v.renter_name ?? "—"]);
+    ws.addRow([
+      v.plate, v.model, v.year,
+      v.chassis ?? "—", v.renavam ?? "—", v.entry_date ?? "—",
+      statusMap[v.status] ?? v.status, v.weekly_rate, v.current_mileage ?? "—",
+      v.renter_name ?? "—", v.pending_debts, v.total_debt_amount,
+    ]);
   });
-  ws.getColumn(5).numFmt = CURRENCY_FMT;
+  ws.getColumn(8).numFmt = CURRENCY_FMT;
+  ws.getColumn(12).numFmt = CURRENCY_FMT;
   autoWidth(ws);
 
   const buf = await wb.xlsx.writeBuffer();
