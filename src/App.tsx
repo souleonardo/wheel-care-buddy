@@ -11,6 +11,7 @@ import Vehicles from "./pages/Vehicles";
 import Payments from "./pages/Payments";
 import Revisions from "./pages/Revisions";
 import Workshop from "./pages/Workshop";
+import Documents from "./pages/Documents";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
 
@@ -30,6 +31,7 @@ const App = () => (
               <Route path="/veiculos" element={<ProtectedRoute allowedRoles={["admin"]}><Vehicles /></ProtectedRoute>} />
               <Route path="/pagamentos" element={<ProtectedRoute allowedRoles={["admin"]}><Payments /></ProtectedRoute>} />
               <Route path="/revisoes" element={<ProtectedRoute allowedRoles={["admin", "locador"]}><Revisions /></ProtectedRoute>} />
+              <Route path="/documentos" element={<ProtectedRoute allowedRoles={["locador"]}><Documents /></ProtectedRoute>} />
               <Route path="/oficina" element={<ProtectedRoute allowedRoles={["admin", "mecanico"]}><Workshop /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
