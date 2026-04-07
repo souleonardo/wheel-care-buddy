@@ -2,22 +2,36 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.99.3";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-async function verifyCaller(req: Request) {
-  const authHeader = req.headers.get("Authorization");
-  if (!authHeader) throw new Error("Não autorizado");
+function jsonResponse(body: Record<string, unknown>, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
 
-  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-  const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+async function getAdminCaller(req: Request) {
+  const authHeader = req.headers.get("Authorization");
+  console.log("Auth header present:", !!authHeader, authHeader?.substring(0, 20));
+  if (!authHeader) throw new Error("Não autorizado - sem header");
+
+  const supabaseUrl = Deno.env.get("SUPABASE_URL");
+  const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY");
+
+  if (!supabaseUrl || !supabaseAnonKey) {
+    throw new Error("Configuração do servidor ausente");
+  }
 
   const callerClient = createClient(supabaseUrl, supabaseAnonKey, {
     global: { headers: { Authorization: authHeader } },
   });
 
   const { data: { user }, error } = await callerClient.auth.getUser();
-  if (error || !user) throw new Error("Não autorizado");
+  console.log("getUser result:", user?.id, "error:", error?.message);
+  if (error || !user) throw new Error("Não autorizado - usuário inválido");
 
   const { data: isAdmin } = await callerClient.rpc("has_role", {
     _user_id: user.id,
@@ -34,43 +48,40 @@ Deno.serve(async (req) => {
   }
 
   try {
-    await verifyCaller(req);
+    await getAdminCaller(req);
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const adminClient = createClient(supabaseUrl, serviceKey);
 
-    const { action, userId, newPassword } = await req.json();
+    if (!serviceKey) {
+      return jsonResponse({ error: "Configuração do servidor ausente" }, 500);
+    }
+
+    const adminClient = createClient(supabaseUrl, serviceKey);
+    const body = await req.json();
+    const action = body.action;
 
     if (action === "list") {
-      // List all users with their emails
       const { data, error } = await adminClient.auth.admin.listUsers({ perPage: 1000 });
       if (error) throw error;
 
-      const users = data.users.map((u) => ({
+      const users = data.users.map((u: any) => ({
         id: u.id,
         email: u.email,
         created_at: u.created_at,
         last_sign_in_at: u.last_sign_in_at,
       }));
 
-      return new Response(JSON.stringify({ users }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return jsonResponse({ users });
     }
 
     if (action === "reset_password") {
+      const { userId, newPassword } = body;
       if (!userId || !newPassword) {
-        return new Response(JSON.stringify({ error: "userId e newPassword são obrigatórios" }), {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        return jsonResponse({ error: "userId e newPassword são obrigatórios" }, 400);
       }
       if (newPassword.length < 6) {
-        return new Response(JSON.stringify({ error: "A senha deve ter no mínimo 6 caracteres" }), {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        return jsonResponse({ error: "A senha deve ter no mínimo 6 caracteres" }, 400);
       }
 
       const { error } = await adminClient.auth.admin.updateUser(userId, {
@@ -78,19 +89,12 @@ Deno.serve(async (req) => {
       });
       if (error) throw error;
 
-      return new Response(JSON.stringify({ message: "Senha atualizada com sucesso" }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return jsonResponse({ message: "Senha atualizada com sucesso" });
     }
 
-    return new Response(JSON.stringify({ error: "Ação inválida" }), {
-      status: 400,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  } catch (err) {
-    return new Response(JSON.stringify({ error: err.message }), {
-      status: 403,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return jsonResponse({ error: "Ação inválida" }, 400);
+  } catch (err: any) {
+    console.error("manage-users error:", err.message);
+    return jsonResponse({ error: err.message }, 403);
   }
 });
