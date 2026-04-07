@@ -204,6 +204,12 @@ export function FleetProvider({ children }: { children: ReactNode }) {
       return;
     }
 
+    // Sync vehicle status to maintenance when a revision is created
+    if (r.status === "scheduled" || r.status === "in_progress") {
+      await supabase.from("vehicles").update({ status: "maintenance" }).eq("id", r.vehicleId);
+      setVehicles((prev) => prev.map((v) => v.id === r.vehicleId ? { ...v, status: "maintenance" } : v));
+    }
+
     await fetchRevisions();
   }, [fetchRevisions]);
 
