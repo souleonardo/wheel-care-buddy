@@ -317,6 +317,15 @@ export default function Users() {
                           variant="ghost"
                           size="icon"
                           className="h-7 w-7 text-muted-foreground hover:text-primary"
+                          onClick={() => setEditUser(u)}
+                          title="Editar usuário"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-muted-foreground hover:text-primary"
                           onClick={() => {
                             setResetDialogUser(u);
                             setNewPassword("");
@@ -324,6 +333,7 @@ export default function Users() {
                           title="Resetar senha"
                         >
                           <KeyRound className="h-3.5 w-3.5" />
+                        </Button>
                         </Button>
                       </div>
                     </div>
