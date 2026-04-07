@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { MobileLayout } from "@/components/MobileLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { FileText, Download, Loader2, Car } from "lucide-react";
+import { FileText, Download, Loader2, Car, ScrollText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
@@ -12,7 +12,14 @@ interface VehicleDoc {
   model: string;
   year: number;
   crlv_url: string | null;
+  contract_url: string | null;
 }
+
+const frequencyLabels: Record<string, string> = {
+  weekly: "Semanal",
+  biweekly: "Quinzenal",
+  monthly: "Mensal",
+};
 
 export default function Documents() {
   const { user } = useAuth();
@@ -23,35 +30,61 @@ export default function Documents() {
   useEffect(() => {
     if (!user) return;
     const fetchVehicles = async () => {
-      // Locador can only see vehicles assigned to them (via RLS)
-      const { data, error } = await supabase
+      // Get vehicles via RLS
+      const { data: vehicleData, error: vErr } = await supabase
         .from("vehicles")
         .select("id, plate, model, year, crlv_url");
 
-      if (error) {
-        console.error(error);
+      if (vErr) {
+        console.error(vErr);
         toast.error("Erro ao carregar veículos.");
+        setLoading(false);
+        return;
       }
-      setVehicles((data as any as VehicleDoc[]) || []);
+
+      // Get assignments for contract URLs
+      const { data: assignments } = await supabase
+        .from("vehicle_assignments")
+        .select("vehicle_id, contract_url, payment_frequency")
+        .eq("renter_id", user.id)
+        .eq("is_active", true);
+
+      const assignmentMap = new Map(
+        (assignments || []).map((a: any) => [a.vehicle_id, a])
+      );
+
+      const docs: VehicleDoc[] = (vehicleData || []).map((v: any) => {
+        const assignment = assignmentMap.get(v.id);
+        return {
+          ...v,
+          contract_url: assignment?.contract_url || null,
+          payment_frequency: assignment?.payment_frequency || null,
+        };
+      });
+
+      setVehicles(docs);
       setLoading(false);
     };
     fetchVehicles();
   }, [user]);
 
-  const handleDownload = async (vehicle: VehicleDoc) => {
-    if (!vehicle.crlv_url) return;
-    setDownloading(vehicle.id);
+  const handleDownload = async (
+    bucket: string,
+    path: string,
+    filename: string,
+    itemId: string
+  ) => {
+    setDownloading(itemId);
     try {
       const { data, error } = await supabase.storage
-        .from("vehicle-documents")
-        .download(vehicle.crlv_url);
-
+        .from(bucket)
+        .download(path);
       if (error) throw error;
 
       const url = URL.createObjectURL(data);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `CRLV_${vehicle.plate}.${vehicle.crlv_url.split(".").pop()}`;
+      a.download = filename;
       a.click();
       URL.revokeObjectURL(url);
     } catch (err: any) {
@@ -81,21 +114,32 @@ export default function Documents() {
         ) : (
           <div className="space-y-3">
             {vehicles.map((vehicle) => (
-              <div key={vehicle.id} className="bg-card rounded-xl border border-border/50 p-4">
+              <div key={vehicle.id} className="bg-card rounded-xl border border-border/50 p-4 space-y-3">
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="text-sm font-semibold text-foreground">{vehicle.model}</h3>
                     <p className="text-xs text-muted-foreground">{vehicle.plate} · {vehicle.year}</p>
                   </div>
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  {/* CRLV */}
                   {vehicle.crlv_url ? (
                     <Button
                       variant="outline"
                       size="sm"
                       className="gap-1.5"
-                      onClick={() => handleDownload(vehicle)}
-                      disabled={downloading === vehicle.id}
+                      onClick={() =>
+                        handleDownload(
+                          "vehicle-documents",
+                          vehicle.crlv_url!,
+                          `CRLV_${vehicle.plate}.${vehicle.crlv_url!.split(".").pop()}`,
+                          `crlv-${vehicle.id}`
+                        )
+                      }
+                      disabled={downloading === `crlv-${vehicle.id}`}
                     >
-                      {downloading === vehicle.id ? (
+                      {downloading === `crlv-${vehicle.id}` ? (
                         <Loader2 className="h-3.5 w-3.5 animate-spin" />
                       ) : (
                         <Download className="h-3.5 w-3.5" />
@@ -103,9 +147,39 @@ export default function Documents() {
                       CRLV
                     </Button>
                   ) : (
-                    <span className="text-xs text-muted-foreground flex items-center gap-1">
+                    <span className="text-xs text-muted-foreground flex items-center gap-1 px-2 py-1 bg-muted rounded-lg">
                       <FileText className="h-3.5 w-3.5" />
-                      Sem documento
+                      CRLV não disponível
+                    </span>
+                  )}
+
+                  {/* Contrato */}
+                  {vehicle.contract_url ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-1.5"
+                      onClick={() =>
+                        handleDownload(
+                          "rental-contracts",
+                          vehicle.contract_url!,
+                          `Contrato_${vehicle.plate}.${vehicle.contract_url!.split(".").pop()}`,
+                          `contract-${vehicle.id}`
+                        )
+                      }
+                      disabled={downloading === `contract-${vehicle.id}`}
+                    >
+                      {downloading === `contract-${vehicle.id}` ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <ScrollText className="h-3.5 w-3.5" />
+                      )}
+                      Contrato
+                    </Button>
+                  ) : (
+                    <span className="text-xs text-muted-foreground flex items-center gap-1 px-2 py-1 bg-muted rounded-lg">
+                      <ScrollText className="h-3.5 w-3.5" />
+                      Contrato não disponível
                     </span>
                   )}
                 </div>

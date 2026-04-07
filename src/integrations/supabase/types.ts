@@ -153,24 +153,30 @@ export type Database = {
       vehicle_assignments: {
         Row: {
           assigned_at: string
+          contract_url: string | null
           id: string
           is_active: boolean
+          payment_frequency: string
           released_at: string | null
           renter_id: string
           vehicle_id: string
         }
         Insert: {
           assigned_at?: string
+          contract_url?: string | null
           id?: string
           is_active?: boolean
+          payment_frequency?: string
           released_at?: string | null
           renter_id: string
           vehicle_id: string
         }
         Update: {
           assigned_at?: string
+          contract_url?: string | null
           id?: string
           is_active?: boolean
+          payment_frequency?: string
           released_at?: string | null
           renter_id?: string
           vehicle_id?: string
