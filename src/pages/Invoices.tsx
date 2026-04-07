@@ -428,7 +428,7 @@ export default function Invoices() {
     const selected = vehicleOptions.find((v) => v.id === violationForm.vehicle_id);
     if (!selected) { toast.error("Veículo não encontrado"); return; }
 
-    const { error } = await supabase.from("traffic_violations").insert({
+    const { data: inserted, error } = await supabase.from("traffic_violations").insert({
       vehicle_id: violationForm.vehicle_id,
       renter_id: selected.renter_id,
       description: violationForm.description,
@@ -436,11 +436,25 @@ export default function Invoices() {
       violation_date: violationForm.violation_date,
       due_date: violationForm.due_date,
       auto_number: violationForm.auto_number || null,
-    } as any);
+    } as any).select("id").single();
 
     if (error) { toast.error("Erro: " + error.message); return; }
+
+    // Upload document if provided
+    if (violationFile && inserted) {
+      const ext = violationFile.name.split(".").pop();
+      const path = `${selected.renter_id}/${(inserted as any).id}.${ext}`;
+      const { error: upErr } = await supabase.storage.from("violation-documents").upload(path, violationFile, { upsert: true });
+      if (upErr) {
+        toast.error("Infração registrada, mas erro no upload: " + upErr.message);
+      } else {
+        await supabase.from("traffic_violations").update({ document_url: path } as any).eq("id", (inserted as any).id);
+      }
+    }
+
     toast.success("Infração registrada");
     setViolationForm({ vehicle_id: "", renter_id: "", description: "", amount: 0, violation_date: "", due_date: "", auto_number: "" });
+    setViolationFile(null);
     setAddViolationOpen(false);
     fetchViolations();
   };
