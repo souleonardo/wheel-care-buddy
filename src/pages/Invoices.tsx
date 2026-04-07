@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Receipt, ChevronDown, ChevronUp, CheckCircle2, Clock, AlertTriangle, Info, FileDown, Car, Plus, ShieldAlert, Upload } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { generateInvoicePDF } from "@/lib/generateInvoicePDF";
+import { generateUnifiedInvoicePDF } from "@/lib/generateUnifiedInvoicePDF";
 import { toast } from "sonner";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
