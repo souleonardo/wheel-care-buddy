@@ -1,7 +1,6 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useFleet, Vehicle } from "@/context/FleetContext";
@@ -18,6 +17,11 @@ interface EditRenterDialogProps {
   vehicle: Vehicle;
 }
 
+interface LocadorOption {
+  userId: string;
+  fullName: string;
+}
+
 const frequencyLabels: Record<string, string> = {
   weekly: "Semanal",
   biweekly: "Quinzenal",
@@ -25,18 +29,60 @@ const frequencyLabels: Record<string, string> = {
 };
 
 export function EditRenterDialog({ vehicle }: EditRenterDialogProps) {
-  const { updateVehicle } = useFleet();
+  const { updateVehicle, refreshVehicles } = useFleet();
   const [open, setOpen] = useState(false);
-  const [renterName, setRenterName] = useState(vehicle.renterName || "");
+  const [selectedRenterId, setSelectedRenterId] = useState("");
+  const [locadores, setLocadores] = useState<LocadorOption[]>([]);
   const [frequency, setFrequency] = useState("weekly");
   const [uploading, setUploading] = useState(false);
   const [contractFile, setContractFile] = useState<File | null>(null);
   const [paymentStartDate, setPaymentStartDate] = useState<Date | undefined>(undefined);
+  const [loadingLocadores, setLoadingLocadores] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  const fetchLocadores = async () => {
+    setLoadingLocadores(true);
+    try {
+      // Get all users with locador role
+      const { data: roles } = await supabase
+        .from("user_roles")
+        .select("user_id")
+        .eq("role", "locador");
+
+      if (roles && roles.length > 0) {
+        const userIds = roles.map((r) => r.user_id);
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("user_id, full_name")
+          .in("user_id", userIds);
+
+        if (profiles) {
+          setLocadores(
+            profiles.map((p) => ({ userId: p.user_id, fullName: p.full_name }))
+              .sort((a, b) => a.fullName.localeCompare(b.fullName))
+          );
+        }
+      } else {
+        setLocadores([]);
+      }
+    } catch (err) {
+      console.error("Error fetching locadores:", err);
+    }
+    setLoadingLocadores(false);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const trimmed = renterName.trim();
+
+    if (!selectedRenterId) {
+      toast.error("Selecione um locatário cadastrado");
+      return;
+    }
+
+    if (!paymentStartDate) {
+      toast.error("Selecione a data de início do pagamento");
+      return;
+    }
 
     // Upload contract if selected
     let contractUrl: string | undefined;
@@ -59,65 +105,82 @@ export function EditRenterDialog({ vehicle }: EditRenterDialogProps) {
       setUploading(false);
     }
 
-    updateVehicle(vehicle.id, {
-      renterName: trimmed || undefined,
-      status: trimmed ? "rented" : "available",
-    });
+    try {
+      // Deactivate any existing active assignment for this vehicle
+      await supabase
+        .from("vehicle_assignments")
+        .update({ is_active: false, released_at: new Date().toISOString() })
+        .eq("vehicle_id", vehicle.id)
+        .eq("is_active", true);
 
-    // Update vehicle_assignments in Supabase with frequency and contract
-    // This is a best-effort update for the assignment record
-    if (trimmed) {
-      try {
-        // Find the active assignment for this vehicle
-        const { data: assignments } = await supabase
-          .from("vehicle_assignments")
-          .select("id")
-          .eq("vehicle_id", vehicle.id)
-          .eq("is_active", true)
-          .limit(1);
+      // Create new assignment
+      const { error } = await supabase.from("vehicle_assignments").insert({
+        vehicle_id: vehicle.id,
+        renter_id: selectedRenterId,
+        payment_frequency: frequency,
+        payment_start_date: format(paymentStartDate, "yyyy-MM-dd"),
+        ...(contractUrl ? { contract_url: contractUrl } : {}),
+      });
 
-        if (assignments && assignments.length > 0) {
-          await supabase
-            .from("vehicle_assignments")
-            .update({
-              payment_frequency: frequency,
-              ...(paymentStartDate ? { payment_start_date: format(paymentStartDate, "yyyy-MM-dd") } : {}),
-              ...(contractUrl ? { contract_url: contractUrl } : {}),
-            })
-            .eq("id", assignments[0].id);
-        }
-      } catch (err) {
-        console.error("Error updating assignment:", err);
-      }
+      if (error) throw error;
+
+      // Update vehicle status
+      const renter = locadores.find((l) => l.userId === selectedRenterId);
+      updateVehicle(vehicle.id, {
+        renterName: renter?.fullName,
+        status: "rented",
+      });
+
+      toast.success("Locatário atribuído com sucesso!");
+      setOpen(false);
+      refreshVehicles();
+    } catch (err: any) {
+      toast.error("Erro ao atribuir locatário: " + err.message);
     }
-
-    setOpen(false);
   };
 
-  const handleRemoveRenter = () => {
-    updateVehicle(vehicle.id, {
-      renterName: undefined,
-      status: "available",
-    });
-    setOpen(false);
+  const handleRemoveRenter = async () => {
+    try {
+      // Deactivate assignment
+      await supabase
+        .from("vehicle_assignments")
+        .update({ is_active: false, released_at: new Date().toISOString() })
+        .eq("vehicle_id", vehicle.id)
+        .eq("is_active", true);
+
+      updateVehicle(vehicle.id, {
+        renterName: undefined,
+        status: "available",
+      });
+
+      toast.success("Locatário removido");
+      setOpen(false);
+      refreshVehicles();
+    } catch (err: any) {
+      toast.error("Erro: " + err.message);
+    }
   };
 
   const handleOpenChange = async (v: boolean) => {
     setOpen(v);
     if (v) {
-      setRenterName(vehicle.renterName || "");
       setContractFile(null);
-      // Load current assignment frequency
+      setSelectedRenterId("");
+      await fetchLocadores();
+
+      // Load current assignment
       try {
         const { data } = await supabase
           .from("vehicle_assignments")
-          .select("payment_frequency, contract_url, payment_start_date")
+          .select("renter_id, payment_frequency, contract_url, payment_start_date")
           .eq("vehicle_id", vehicle.id)
           .eq("is_active", true)
           .limit(1);
+
         if (data && data.length > 0) {
-          setFrequency((data[0] as any).payment_frequency || "weekly");
-          const startDate = (data[0] as any).payment_start_date;
+          setSelectedRenterId(data[0].renter_id);
+          setFrequency(data[0].payment_frequency || "weekly");
+          const startDate = data[0].payment_start_date;
           setPaymentStartDate(startDate ? new Date(startDate + "T00:00:00") : undefined);
         } else {
           setFrequency("weekly");
@@ -142,15 +205,29 @@ export function EditRenterDialog({ vehicle }: EditRenterDialogProps) {
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1.5">
-            <Label htmlFor="renterName">Nome do Locatário</Label>
-            <Input
-              id="renterName"
-              placeholder="Nome completo (vazio = disponível)"
-              value={renterName}
-              onChange={(e) => setRenterName(e.target.value)}
-              maxLength={100}
-              autoFocus
-            />
+            <Label>Locatário</Label>
+            {loadingLocadores ? (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground py-2">
+                <Loader2 className="h-4 w-4 animate-spin" /> Carregando...
+              </div>
+            ) : locadores.length === 0 ? (
+              <p className="text-sm text-muted-foreground py-2">
+                Nenhum locatário cadastrado. Cadastre um usuário com perfil "Locador" primeiro.
+              </p>
+            ) : (
+              <Select value={selectedRenterId} onValueChange={setSelectedRenterId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione um locatário..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {locadores.map((l) => (
+                    <SelectItem key={l.userId} value={l.userId}>
+                      {l.fullName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </div>
 
           <div className="space-y-1.5">
@@ -197,6 +274,7 @@ export function EditRenterDialog({ vehicle }: EditRenterDialogProps) {
               </PopoverContent>
             </Popover>
           </div>
+
           <div className="space-y-1.5">
             <Label>Contrato de Locação</Label>
             <input
@@ -234,7 +312,11 @@ export function EditRenterDialog({ vehicle }: EditRenterDialogProps) {
                 Remover Locatário
               </Button>
             )}
-            <Button type="submit" className="flex-1 gradient-primary text-primary-foreground" disabled={uploading}>
+            <Button
+              type="submit"
+              className="flex-1 gradient-primary text-primary-foreground"
+              disabled={uploading || !selectedRenterId || locadores.length === 0}
+            >
               {uploading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
               Salvar
             </Button>
