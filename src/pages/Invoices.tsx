@@ -6,6 +6,7 @@ import { Receipt, ChevronDown, ChevronUp, CheckCircle2, Clock, AlertTriangle, In
 import { cn } from "@/lib/utils";
 import { generateInvoicePDF } from "@/lib/generateInvoicePDF";
 import { toast } from "sonner";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 interface InvoiceItem {
   id: string;
