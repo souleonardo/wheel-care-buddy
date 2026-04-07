@@ -136,7 +136,7 @@ export function FleetProvider({ children }: { children: ReactNode }) {
   const fetchRevisions = useCallback(async () => {
     const { data, error } = await supabase
       .from("revisions")
-      .select("id, vehicle_id, type, scheduled_date, status, notes, mechanic_notes, vehicle:vehicles(plate, model)")
+      .select("id, vehicle_id, type, scheduled_date, scheduled_time, status, notes, mechanic_notes, vehicle:vehicles(plate, model)")
       .order("scheduled_date", { ascending: false });
 
     if (error) {
