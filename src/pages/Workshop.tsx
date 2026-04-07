@@ -5,6 +5,7 @@ import { MobileLayout } from "@/components/MobileLayout";
 import { AddSupplyUsageDialog } from "@/components/AddSupplyUsageDialog";
 import { OilChangeMileageDialog } from "@/components/OilChangeMileageDialog";
 import { MechanicNotesDialog } from "@/components/MechanicNotesDialog";
+import { LaborChargeDialog } from "@/components/LaborChargeDialog";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { generateRevisionPDF } from "@/lib/generateRevisionPDF";
