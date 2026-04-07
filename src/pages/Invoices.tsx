@@ -959,6 +959,15 @@ export default function Invoices() {
                 onChange={(e) => setViolationForm({ ...violationForm, due_date: e.target.value })}
               />
             </div>
+            <div>
+              <Label>Documento (PDF, JPG, PNG)</Label>
+              <Input
+                type="file"
+                accept=".pdf,.jpg,.jpeg,.png"
+                onChange={(e) => setViolationFile(e.target.files?.[0] ?? null)}
+              />
+              {violationFile && <p className="text-[10px] text-muted-foreground mt-1">{violationFile.name}</p>}
+            </div>
             <Button onClick={handleAddViolation} className="w-full">Registrar Infração</Button>
           </div>
         </DialogContent>
