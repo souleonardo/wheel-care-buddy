@@ -33,6 +33,7 @@ export interface Revision {
   vehicleModel: string;
   type: string;
   scheduledDate: string;
+  scheduledTime?: string;
   status: "pending_approval" | "scheduled" | "in_progress" | "completed" | "rejected";
   notes?: string;
   mechanicNotes?: string;
@@ -135,7 +136,7 @@ export function FleetProvider({ children }: { children: ReactNode }) {
   const fetchRevisions = useCallback(async () => {
     const { data, error } = await supabase
       .from("revisions")
-      .select("id, vehicle_id, type, scheduled_date, status, notes, mechanic_notes, vehicle:vehicles(plate, model)")
+      .select("id, vehicle_id, type, scheduled_date, scheduled_time, status, notes, mechanic_notes, vehicle:vehicles(plate, model)")
       .order("scheduled_date", { ascending: false });
 
     if (error) {
@@ -152,6 +153,7 @@ export function FleetProvider({ children }: { children: ReactNode }) {
         vehicleModel: r.vehicle?.model ?? "",
         type: r.type,
         scheduledDate: r.scheduled_date,
+        scheduledTime: r.scheduled_time ?? undefined,
         status: r.status as Revision["status"],
         notes: r.notes ?? undefined,
         mechanicNotes: r.mechanic_notes ?? undefined,
@@ -225,10 +227,11 @@ export function FleetProvider({ children }: { children: ReactNode }) {
       vehicle_id: r.vehicleId,
       type: r.type,
       scheduled_date: r.scheduledDate,
+      scheduled_time: r.scheduledTime || null,
       status: r.status,
       notes: r.notes || null,
       requested_by: userId || null,
-    });
+    } as any);
 
     if (error) {
       console.error("Error adding revision:", error);
