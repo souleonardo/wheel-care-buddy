@@ -104,16 +104,22 @@ export default function Workshop() {
   }, [fetchUsage, fetchBillableTypes, fetchOilStatus]);
 
   const renderUsageList = (revisionId: string) => {
-    const items = usageMap[revisionId];
-    if (!items || items.length === 0) return null;
+    const dbItems = usageMap[revisionId] || [];
+    const localItems = localUsageMap[revisionId] || [];
+    if (dbItems.length === 0 && localItems.length === 0) return null;
     return (
       <div className="mt-2 space-y-1">
         <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
-          <Package className="h-3 w-3" /> Peças utilizadas
+          <Package className="h-3 w-3" /> Peças utilizadas ({dbItems.length + localItems.length})
         </p>
-        {items.map((item) => (
+        {dbItems.map((item) => (
           <div key={item.id} className="text-[11px] text-muted-foreground bg-muted/40 rounded px-2 py-1">
             {item.supply?.name ?? "—"}: <span className="font-medium text-foreground">{item.quantity_used} {item.supply?.unit}</span>
+          </div>
+        ))}
+        {localItems.map((item, idx) => (
+          <div key={`local-${idx}`} className="text-[11px] text-muted-foreground bg-muted/40 rounded px-2 py-1">
+            {item.name}: <span className="font-medium text-foreground">{item.quantity} {item.unit}</span>
           </div>
         ))}
       </div>
