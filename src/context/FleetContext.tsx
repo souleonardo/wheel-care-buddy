@@ -11,6 +11,7 @@ export interface Vehicle {
   weeklyRate: number;
   nextRevision?: string;
   crlvUrl?: string;
+  crlvExpiryDate?: string;
 }
 
 export interface Payment {
