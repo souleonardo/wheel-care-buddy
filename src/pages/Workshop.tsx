@@ -275,6 +275,13 @@ export default function Workshop() {
       }
     }
 
+    // Fetch vehicle details for PDF
+    const { data: vehicleDetails } = await supabase
+      .from("vehicles")
+      .select("chassis, renavam")
+      .eq("id", rev.vehicleId)
+      .single();
+
     // Generate PDF report
     const supplies = usageItems.map((u) => ({
       name: u.supply?.name ?? "—",
@@ -284,6 +291,8 @@ export default function Workshop() {
     generateRevisionPDF({
       vehicleModel: rev.vehicleModel,
       vehiclePlate: rev.vehiclePlate,
+      vehicleChassis: (vehicleDetails as any)?.chassis,
+      vehicleRenavam: (vehicleDetails as any)?.renavam,
       type: rev.type,
       scheduledDate: rev.scheduledDate,
       notes: rev.notes,
