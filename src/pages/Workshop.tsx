@@ -28,11 +28,14 @@ interface VehicleOilStatus {
   last_oil_change_date: string | null;
 }
 
-const statusConfig = {
+const statusConfig: Record<string, { label: string; icon: typeof CalendarDays; class: string; iconClass: string }> = {
+  pending_approval: { label: "Pendente", icon: CalendarDays, class: "bg-muted text-muted-foreground", iconClass: "text-muted-foreground" },
   scheduled: { label: "Agendada", icon: CalendarDays, class: "bg-info/15 text-info", iconClass: "text-info" },
   in_progress: { label: "Em andamento", icon: Clock, class: "bg-warning/15 text-warning", iconClass: "text-warning" },
   completed: { label: "Concluída", icon: CheckCircle2, class: "bg-success/15 text-success", iconClass: "text-success" },
 };
+
+const fallbackStatusConfig = { label: "Desconhecido", icon: CalendarDays, class: "bg-muted text-muted-foreground", iconClass: "text-muted-foreground" };
 
 export default function Workshop() {
   const { revisions, updateRevisionStatus } = useFleet();
@@ -385,7 +388,7 @@ export default function Workshop() {
           )}
           <div className="space-y-3">
             {activeRevisions.map((rev) => {
-              const config = statusConfig[rev.status];
+              const config = statusConfig[rev.status] ?? fallbackStatusConfig;
               const StatusIcon = config.icon;
               return (
                 <div key={rev.id} className="bg-card rounded-xl border border-border/50 p-4">

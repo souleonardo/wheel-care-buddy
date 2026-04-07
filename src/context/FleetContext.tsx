@@ -33,7 +33,7 @@ export interface Revision {
   vehicleModel: string;
   type: string;
   scheduledDate: string;
-  status: "scheduled" | "in_progress" | "completed";
+  status: "pending_approval" | "scheduled" | "in_progress" | "completed" | "rejected";
   notes?: string;
   mechanicNotes?: string;
 }
