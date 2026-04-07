@@ -315,6 +315,7 @@ export type Database = {
       vehicles: {
         Row: {
           created_at: string
+          crlv_expiry_date: string | null
           crlv_url: string | null
           current_mileage: number | null
           id: string
@@ -330,6 +331,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          crlv_expiry_date?: string | null
           crlv_url?: string | null
           current_mileage?: number | null
           id?: string
@@ -345,6 +347,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          crlv_expiry_date?: string | null
           crlv_url?: string | null
           current_mileage?: number | null
           id?: string
