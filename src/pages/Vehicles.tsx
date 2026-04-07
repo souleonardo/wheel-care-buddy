@@ -4,6 +4,7 @@ import { MobileLayout } from "@/components/MobileLayout";
 import { AddVehicleDialog } from "@/components/AddVehicleDialog";
 import { EditRenterDialog } from "@/components/EditRenterDialog";
 import { UploadCRLVButton } from "@/components/UploadCRLVButton";
+import { VehicleHistoryDialog } from "@/components/VehicleHistoryDialog";
 import { Car, User, Calendar, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -66,6 +67,11 @@ export default function Vehicles() {
                       vehiclePlate={vehicle.plate}
                       hasCrlv={!!vehicle.crlvUrl}
                       onUploaded={() => refreshVehicles()}
+                    />
+                    <VehicleHistoryDialog
+                      vehicleId={vehicle.id}
+                      vehiclePlate={vehicle.plate}
+                      vehicleModel={vehicle.model}
                     />
                     <EditRenterDialog vehicle={vehicle} />
                     <span className={cn("text-[10px] font-medium px-2.5 py-1 rounded-full", config.class)}>
