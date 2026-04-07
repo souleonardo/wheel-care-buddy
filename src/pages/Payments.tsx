@@ -2,7 +2,7 @@ import { useState } from "react";
 import { MobileLayout } from "@/components/MobileLayout";
 import { useFleet } from "@/context/FleetContext";
 import { cn } from "@/lib/utils";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, Wrench } from "lucide-react";
 
 const statusConfig = {
   paid: { label: "Pago", class: "bg-success/15 text-success", dotClass: "bg-success" },
@@ -65,6 +65,12 @@ export default function Payments() {
                   <div className="flex items-center gap-2">
                     <div className={cn("h-2 w-2 rounded-full", config.dotClass)} />
                     <span className="text-sm font-medium text-foreground">{payment.renterName}</span>
+                    {payment.paymentType === "maintenance" && (
+                      <span className="text-[9px] font-medium px-1.5 py-0.5 rounded bg-accent text-accent-foreground flex items-center gap-0.5">
+                        <Wrench className="h-2.5 w-2.5" />
+                        Manutenção
+                      </span>
+                    )}
                   </div>
                   <span className={cn("text-[10px] font-medium px-2 py-0.5 rounded-full", config.class)}>
                     {config.label}
