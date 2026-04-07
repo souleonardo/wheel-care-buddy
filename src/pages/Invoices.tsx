@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { MobileLayout } from "@/components/MobileLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Receipt, ChevronDown, ChevronUp, CheckCircle2, Clock, AlertTriangle, Info, FileDown, Car, Plus, ShieldAlert } from "lucide-react";
+import { Receipt, ChevronDown, ChevronUp, CheckCircle2, Clock, AlertTriangle, Info, FileDown, Car, Plus, ShieldAlert, Upload } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { generateInvoicePDF } from "@/lib/generateInvoicePDF";
 import { toast } from "sonner";
@@ -62,6 +62,7 @@ interface TrafficViolation {
   paid_date: string | null;
   auto_number: string | null;
   source: string;
+  document_url: string | null;
 }
 
 const statusConfig: Record<string, { label: string; icon: typeof Clock; colorClass: string }> = {
@@ -321,6 +322,7 @@ export default function Invoices() {
       paid_date: r.paid_date,
       auto_number: r.auto_number,
       source: r.source,
+      document_url: r.document_url ?? null,
     }));
 
     setViolations(mapped);
@@ -788,6 +790,44 @@ export default function Invoices() {
                             <span>Valor da multa</span>
                             <span>R$ {v.amount.toFixed(2)}</span>
                           </div>
+
+                          {/* Document upload (admin) / download (all) */}
+                          {v.document_url ? (
+                            <button
+                              onClick={async () => {
+                                const { data } = await supabase.storage.from("violation-documents").createSignedUrl(v.document_url!, 300);
+                                if (data?.signedUrl) window.open(data.signedUrl, "_blank");
+                                else toast.error("Erro ao gerar link de download");
+                              }}
+                              className="w-full flex items-center justify-center gap-2 py-2 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors text-xs font-medium"
+                            >
+                              <FileDown className="h-4 w-4" />
+                              Baixar Documento da Infração
+                            </button>
+                          ) : isAdmin ? (
+                            <label className="w-full flex items-center justify-center gap-2 py-2 rounded-lg bg-muted text-muted-foreground hover:bg-muted/80 transition-colors text-xs font-medium cursor-pointer">
+                              <Upload className="h-4 w-4" />
+                              Anexar Documento
+                              <input
+                                type="file"
+                                accept=".pdf,.jpg,.jpeg,.png"
+                                className="hidden"
+                                onChange={async (e) => {
+                                  const file = e.target.files?.[0];
+                                  if (!file) return;
+                                  const ext = file.name.split(".").pop();
+                                  const path = `${v.renter_id}/${v.id}.${ext}`;
+                                  const { error: upErr } = await supabase.storage.from("violation-documents").upload(path, file, { upsert: true });
+                                  if (upErr) { toast.error("Erro no upload: " + upErr.message); return; }
+                                  await supabase.from("traffic_violations").update({ document_url: path } as any).eq("id", v.id);
+                                  toast.success("Documento anexado");
+                                  fetchViolations();
+                                }}
+                              />
+                            </label>
+                          ) : (
+                            <p className="text-[10px] text-muted-foreground text-center italic">Nenhum documento anexado</p>
+                          )}
 
                           {isAdmin && v.status !== "paid" && (
                             <button
