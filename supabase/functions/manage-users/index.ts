@@ -15,7 +15,8 @@ function jsonResponse(body: Record<string, unknown>, status = 200) {
 
 async function getAdminCaller(req: Request) {
   const authHeader = req.headers.get("Authorization");
-  if (!authHeader) throw new Error("Não autorizado");
+  console.log("Auth header present:", !!authHeader, authHeader?.substring(0, 20));
+  if (!authHeader) throw new Error("Não autorizado - sem header");
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY");
