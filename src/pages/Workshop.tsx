@@ -53,6 +53,12 @@ export default function Workshop() {
     pendingComplete: (() => void) | null;
   }>({ open: false, vehicleId: "", vehicleModel: "", vehiclePlate: "", revisionId: "", pendingComplete: null });
 
+  const [notesDialog, setNotesDialog] = useState<{
+    open: boolean;
+    revisionLabel: string;
+    pendingComplete: ((notes: string) => void) | null;
+  }>({ open: false, revisionLabel: "", pendingComplete: null });
+
   const fetchUsage = useCallback(async () => {
     const revisionIds = revisions.map((r) => r.id);
     if (revisionIds.length === 0) return;
