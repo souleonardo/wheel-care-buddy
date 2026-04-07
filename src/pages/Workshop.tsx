@@ -11,14 +11,13 @@ import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { generateRevisionPDF } from "@/lib/generateRevisionPDF";
 import { toast } from "sonner";
-import { BillableConfigDialog } from "@/components/BillableConfigDialog";
 import { useAuth } from "@/hooks/useAuth";
 
 interface UsageRecord {
   id: string;
   revision_id: string;
   quantity_used: number;
-  supply: { name: string; unit: string; unit_cost: number } | null;
+  supply: { name: string; unit: string; unit_cost: number; is_billable: boolean; is_labor_billable: boolean } | null;
 }
 
 interface VehicleOilStatus {
@@ -49,7 +48,6 @@ export default function Workshop() {
 
   const [usageMap, setUsageMap] = useState<Record<string, UsageRecord[]>>({});
   const [localUsageMap, setLocalUsageMap] = useState<Record<string, { name: string; unit: string; quantity: number; unitCost: number }[]>>({});
-  const [billableTypes, setBillableTypes] = useState<Set<string>>(new Set());
   const [oilVehicles, setOilVehicles] = useState<VehicleOilStatus[]>([]);
   const [oilDialog, setOilDialog] = useState<{
     open: boolean;
@@ -79,7 +77,7 @@ export default function Workshop() {
 
     const { data } = await supabase
       .from("supply_usage")
-      .select("id, revision_id, quantity_used, supply:supplies(name, unit, unit_cost)")
+      .select("id, revision_id, quantity_used, supply:supplies(name, unit, unit_cost, is_billable, is_labor_billable)")
       .in("revision_id", revisionIds);
 
     if (data) {
@@ -93,12 +91,6 @@ export default function Workshop() {
     }
   }, [revisions]);
 
-  const fetchBillableTypes = useCallback(async () => {
-    const { data } = await supabase
-      .from("billable_service_types")
-      .select("service_type");
-    if (data) setBillableTypes(new Set(data.map((d: any) => d.service_type)));
-  }, []);
 
   const fetchOilStatus = useCallback(async () => {
     const { data } = await supabase
@@ -112,9 +104,8 @@ export default function Workshop() {
 
   useEffect(() => {
     fetchUsage();
-    fetchBillableTypes();
     fetchOilStatus();
-  }, [fetchUsage, fetchBillableTypes, fetchOilStatus]);
+  }, [fetchUsage, fetchOilStatus]);
 
   const handleRemoveUsage = async (usageId: string) => {
     const { error } = await supabase.from("supply_usage").delete().eq("id", usageId);
