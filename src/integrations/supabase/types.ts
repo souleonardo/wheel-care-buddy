@@ -21,8 +21,10 @@ export type Database = {
           due_date: string
           id: string
           paid_date: string | null
+          payment_type: string
           receipt_url: string | null
           renter_id: string
+          revision_id: string | null
           status: string
           updated_at: string
           vehicle_id: string
@@ -33,8 +35,10 @@ export type Database = {
           due_date: string
           id?: string
           paid_date?: string | null
+          payment_type?: string
           receipt_url?: string | null
           renter_id: string
+          revision_id?: string | null
           status?: string
           updated_at?: string
           vehicle_id: string
@@ -45,13 +49,22 @@ export type Database = {
           due_date?: string
           id?: string
           paid_date?: string | null
+          payment_type?: string
           receipt_url?: string | null
           renter_id?: string
+          revision_id?: string | null
           status?: string
           updated_at?: string
           vehicle_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "payments_revision_id_fkey"
+            columns: ["revision_id"]
+            isOneToOne: false
+            referencedRelation: "revisions"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "payments_vehicle_id_fkey"
             columns: ["vehicle_id"]

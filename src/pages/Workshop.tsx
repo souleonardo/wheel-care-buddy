@@ -7,12 +7,13 @@ import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { generateRevisionPDF } from "@/lib/generateRevisionPDF";
 import { toast } from "sonner";
+import { isServiceBillable } from "@/lib/billableServices";
 
 interface UsageRecord {
   id: string;
   revision_id: string;
   quantity_used: number;
-  supply: { name: string; unit: string } | null;
+  supply: { name: string; unit: string; unit_cost: number } | null;
 }
 
 const statusConfig = {
@@ -34,7 +35,7 @@ export default function Workshop() {
 
     const { data } = await supabase
       .from("supply_usage")
-      .select("id, revision_id, quantity_used, supply:supplies(name, unit)")
+      .select("id, revision_id, quantity_used, supply:supplies(name, unit, unit_cost)")
       .in("revision_id", revisionIds);
 
     if (data) {
@@ -148,10 +149,46 @@ export default function Workshop() {
                               onUsageAdded={fetchUsage}
                             />
                             <button
-                              onClick={() => {
+                              onClick={async () => {
                                 updateRevisionStatus(rev.id, "completed");
+
+                                // Calculate cost & generate maintenance payment if billable
+                                const usageItems = usageMap[rev.id] || [];
+                                if (isServiceBillable(rev.type) && usageItems.length > 0) {
+                                  const totalCost = usageItems.reduce((sum, u) => {
+                                    const cost = u.supply?.unit_cost ?? 0;
+                                    return sum + u.quantity_used * cost;
+                                  }, 0);
+
+                                  if (totalCost > 0) {
+                                    // Find the renter via vehicle_assignments
+                                    const { data: assignment } = await supabase
+                                      .from("vehicle_assignments")
+                                      .select("renter_id")
+                                      .eq("vehicle_id", rev.vehicleId)
+                                      .eq("is_active", true)
+                                      .maybeSingle();
+
+                                    if (assignment?.renter_id) {
+                                      const dueDate = new Date();
+                                      dueDate.setDate(dueDate.getDate() + 7);
+
+                                      await supabase.from("payments").insert({
+                                        vehicle_id: rev.vehicleId,
+                                        renter_id: assignment.renter_id,
+                                        amount: totalCost,
+                                        due_date: dueDate.toISOString().split("T")[0],
+                                        status: "pending",
+                                        payment_type: "maintenance",
+                                        revision_id: rev.id,
+                                      });
+                                      toast.success(`Fatura de manutenção gerada: R$ ${totalCost.toFixed(2)}`);
+                                    }
+                                  }
+                                }
+
                                 // Generate PDF report
-                                const supplies = (usageMap[rev.id] || []).map((u) => ({
+                                const supplies = usageItems.map((u) => ({
                                   name: u.supply?.name ?? "—",
                                   unit: u.supply?.unit ?? "un",
                                   quantity: u.quantity_used,
@@ -164,7 +201,6 @@ export default function Workshop() {
                                   notes: rev.notes,
                                   supplies,
                                 });
-                                toast.success("Relatório PDF gerado!");
                               }}
                               className="text-[11px] font-medium px-3 py-1.5 rounded-lg bg-success/15 text-success hover:bg-success/25 transition-colors"
                             >
