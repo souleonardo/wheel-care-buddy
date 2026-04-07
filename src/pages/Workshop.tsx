@@ -1,7 +1,17 @@
 import { useFleet } from "@/context/FleetContext";
-import { Clock, CheckCircle2, Wrench, CalendarDays, Car } from "lucide-react";
+import { useEffect, useState, useCallback } from "react";
+import { Clock, CheckCircle2, Wrench, CalendarDays, Car, Package } from "lucide-react";
 import { MobileLayout } from "@/components/MobileLayout";
+import { AddSupplyUsageDialog } from "@/components/AddSupplyUsageDialog";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
+
+interface UsageRecord {
+  id: string;
+  revision_id: string;
+  quantity_used: number;
+  supply: { name: string; unit: string } | null;
+}
 
 const statusConfig = {
   scheduled: { label: "Agendada", icon: CalendarDays, class: "bg-info/15 text-info", iconClass: "text-info" },
@@ -13,6 +23,49 @@ export default function Workshop() {
   const { revisions, updateRevisionStatus } = useFleet();
   const activeRevisions = revisions.filter((r) => r.status !== "completed");
   const completedRevisions = revisions.filter((r) => r.status === "completed");
+
+  const [usageMap, setUsageMap] = useState<Record<string, UsageRecord[]>>({});
+
+  const fetchUsage = useCallback(async () => {
+    const revisionIds = revisions.map((r) => r.id);
+    if (revisionIds.length === 0) return;
+
+    const { data } = await supabase
+      .from("supply_usage")
+      .select("id, revision_id, quantity_used, supply:supplies(name, unit)")
+      .in("revision_id", revisionIds);
+
+    if (data) {
+      const map: Record<string, UsageRecord[]> = {};
+      (data as any[]).forEach((row) => {
+        const rid = row.revision_id;
+        if (!map[rid]) map[rid] = [];
+        map[rid].push(row);
+      });
+      setUsageMap(map);
+    }
+  }, [revisions]);
+
+  useEffect(() => {
+    fetchUsage();
+  }, [fetchUsage]);
+
+  const renderUsageList = (revisionId: string) => {
+    const items = usageMap[revisionId];
+    if (!items || items.length === 0) return null;
+    return (
+      <div className="mt-2 space-y-1">
+        <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+          <Package className="h-3 w-3" /> Peças utilizadas
+        </p>
+        {items.map((item) => (
+          <div key={item.id} className="text-[11px] text-muted-foreground bg-muted/40 rounded px-2 py-1">
+            {item.supply?.name ?? "—"}: <span className="font-medium text-foreground">{item.quantity_used} {item.supply?.unit}</span>
+          </div>
+        ))}
+      </div>
+    );
+  };
 
   return (
     <MobileLayout title="Oficina — Agendamentos">
@@ -71,8 +124,12 @@ export default function Workshop() {
                       {rev.notes && (
                         <p className="text-[11px] text-muted-foreground/70 mt-2 italic">📝 {rev.notes}</p>
                       )}
+
+                      {/* Used supplies */}
+                      {renderUsageList(rev.id)}
+
                       {/* Action Buttons */}
-                      <div className="flex gap-2 mt-3">
+                      <div className="flex flex-wrap gap-2 mt-3">
                         {rev.status === "scheduled" && (
                           <button
                             onClick={() => updateRevisionStatus(rev.id, "in_progress")}
@@ -82,12 +139,19 @@ export default function Workshop() {
                           </button>
                         )}
                         {rev.status === "in_progress" && (
-                          <button
-                            onClick={() => updateRevisionStatus(rev.id, "completed")}
-                            className="text-[11px] font-medium px-3 py-1.5 rounded-lg bg-success/15 text-success hover:bg-success/25 transition-colors"
-                          >
-                            Concluir Serviço
-                          </button>
+                          <>
+                            <AddSupplyUsageDialog
+                              revisionId={rev.id}
+                              revisionLabel={`${rev.vehicleModel} — ${rev.type}`}
+                              onUsageAdded={fetchUsage}
+                            />
+                            <button
+                              onClick={() => updateRevisionStatus(rev.id, "completed")}
+                              className="text-[11px] font-medium px-3 py-1.5 rounded-lg bg-success/15 text-success hover:bg-success/25 transition-colors"
+                            >
+                              Concluir Serviço
+                            </button>
+                          </>
                         )}
                       </div>
                     </div>
@@ -104,12 +168,15 @@ export default function Workshop() {
             <h2 className="text-sm font-semibold text-foreground mb-3 uppercase tracking-wider">Concluídos</h2>
             <div className="space-y-2">
               {completedRevisions.map((rev) => (
-                <div key={rev.id} className="bg-card/50 rounded-xl border border-border/30 p-3 flex items-center gap-3 opacity-70">
-                  <CheckCircle2 className="h-4 w-4 text-success shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-foreground truncate">{rev.vehicleModel} — {rev.type}</p>
-                    <p className="text-xs text-muted-foreground">{rev.vehiclePlate} · {new Date(rev.scheduledDate).toLocaleDateString("pt-BR")}</p>
+                <div key={rev.id} className="bg-card/50 rounded-xl border border-border/30 p-3">
+                  <div className="flex items-center gap-3">
+                    <CheckCircle2 className="h-4 w-4 text-success shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">{rev.vehicleModel} — {rev.type}</p>
+                      <p className="text-xs text-muted-foreground">{rev.vehiclePlate} · {new Date(rev.scheduledDate).toLocaleDateString("pt-BR")}</p>
+                    </div>
                   </div>
+                  {renderUsageList(rev.id)}
                 </div>
               ))}
             </div>
