@@ -1,7 +1,9 @@
+import { useState } from "react";
 import { useFleet } from "@/context/FleetContext";
 import { MobileLayout } from "@/components/MobileLayout";
 import { AddVehicleDialog } from "@/components/AddVehicleDialog";
 import { EditRenterDialog } from "@/components/EditRenterDialog";
+import { UploadCRLVButton } from "@/components/UploadCRLVButton";
 import { Car, User, Calendar, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -25,6 +27,7 @@ const statusConfig = {
 
 export default function Vehicles() {
   const { vehicles, removeVehicle } = useFleet();
+  const [crlvMap, setCrlvMap] = useState<Record<string, string>>({});
 
   return (
     <MobileLayout title="Veículos">
@@ -58,7 +61,13 @@ export default function Vehicles() {
                     <h3 className="text-base font-semibold text-foreground">{vehicle.model}</h3>
                     <p className="text-sm text-muted-foreground">{vehicle.plate} · {vehicle.year}</p>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1">
+                    <UploadCRLVButton
+                      vehicleId={vehicle.id}
+                      vehiclePlate={vehicle.plate}
+                      hasCrlv={!!crlvMap[vehicle.id]}
+                      onUploaded={(url) => setCrlvMap((m) => ({ ...m, [vehicle.id]: url }))}
+                    />
                     <EditRenterDialog vehicle={vehicle} />
                     <span className={cn("text-[10px] font-medium px-2.5 py-1 rounded-full", config.class)}>
                       {config.label}
