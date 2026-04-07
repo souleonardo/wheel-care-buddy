@@ -60,12 +60,12 @@ export function AddRevisionDialog() {
       <DialogTrigger asChild>
         <Button size="sm" className="gradient-primary text-primary-foreground gap-1.5">
           <Plus className="h-4 w-4" />
-          Agendar
+          Agendar Revisão
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Agendar Revisão</DialogTitle>
+          <DialogTitle>{isLocatario ? "Solicitar Revisão" : "Agendar Revisão"}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1.5">
@@ -100,7 +100,7 @@ export function AddRevisionDialog() {
             <Label htmlFor="notes">Observações</Label>
             <Textarea id="notes" placeholder="Observações adicionais..." value={form.notes} onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))} maxLength={200} rows={2} />
           </div>
-          <Button type="submit" className="w-full gradient-primary text-primary-foreground">Agendar Revisão</Button>
+          <Button type="submit" className="w-full gradient-primary text-primary-foreground">{isLocatario ? "Solicitar Revisão" : "Agendar Revisão"}</Button>
         </form>
       </DialogContent>
     </Dialog>
