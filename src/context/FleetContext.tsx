@@ -20,6 +20,7 @@ export interface Payment {
   dueDate: string;
   status: "paid" | "pending" | "overdue";
   paidDate?: string;
+  paymentType?: "rental" | "maintenance";
 }
 
 export interface Revision {
