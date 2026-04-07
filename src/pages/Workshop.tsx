@@ -34,15 +34,15 @@ const statusConfig: Record<string, { label: string; icon: typeof CalendarDays; c
   scheduled: { label: "Agendada", icon: CalendarDays, class: "bg-info/15 text-info", iconClass: "text-info" },
   in_progress: { label: "Em andamento", icon: Clock, class: "bg-warning/15 text-warning", iconClass: "text-warning" },
   completed: { label: "Concluída", icon: CheckCircle2, class: "bg-success/15 text-success", iconClass: "text-success" },
+  rejected: { label: "Rejeitada", icon: AlertTriangle, class: "bg-destructive/15 text-destructive", iconClass: "text-destructive" },
 };
-
 const fallbackStatusConfig = { label: "Desconhecido", icon: CalendarDays, class: "bg-muted text-muted-foreground", iconClass: "text-muted-foreground" };
 
 export default function Workshop() {
   const { revisions, updateRevisionStatus } = useFleet();
   const { role } = useAuth();
   const isAdmin = role === "admin";
-  const activeRevisions = revisions.filter((r) => r.status !== "completed");
+  const activeRevisions = revisions.filter((r) => r.status !== "completed" && r.status !== "rejected");
   const completedRevisions = revisions.filter((r) => r.status === "completed");
 
   const [usageMap, setUsageMap] = useState<Record<string, UsageRecord[]>>({});
@@ -472,6 +472,22 @@ export default function Workshop() {
 
                       {/* Action Buttons */}
                       <div className="flex flex-wrap gap-2 mt-3">
+                        {rev.status === "pending_approval" && (
+                          <>
+                            <button
+                              onClick={() => updateRevisionStatus(rev.id, "scheduled")}
+                              className="text-[11px] font-medium px-3 py-1.5 rounded-lg bg-success/15 text-success hover:bg-success/25 transition-colors"
+                            >
+                              ✅ Aprovar
+                            </button>
+                            <button
+                              onClick={() => updateRevisionStatus(rev.id, "rejected")}
+                              className="text-[11px] font-medium px-3 py-1.5 rounded-lg bg-destructive/15 text-destructive hover:bg-destructive/25 transition-colors"
+                            >
+                              ❌ Rejeitar
+                            </button>
+                          </>
+                        )}
                         {rev.status === "scheduled" && (
                           <button
                             onClick={() => updateRevisionStatus(rev.id, "in_progress")}
