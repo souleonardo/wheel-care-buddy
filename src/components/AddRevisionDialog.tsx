@@ -24,6 +24,8 @@ const serviceTypes = [
 
 export function AddRevisionDialog() {
   const { vehicles, addRevision } = useFleet();
+  const { role } = useAuth();
+  const isLocatario = role === "locador";
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({
     vehicleId: "",
@@ -44,10 +46,11 @@ export function AddRevisionDialog() {
       vehicleModel: selectedVehicle.model,
       type: form.type,
       scheduledDate: form.scheduledDate,
-      status: "scheduled",
+      status: isLocatario ? "pending_approval" : "scheduled",
       notes: form.notes || undefined,
     });
 
+    toast.success(isLocatario ? "Solicitação de revisão enviada para aprovação!" : "Revisão agendada!");
     setForm({ vehicleId: "", type: "", scheduledDate: "", notes: "" });
     setOpen(false);
   };
