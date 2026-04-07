@@ -196,6 +196,27 @@ export default function Workshop() {
                     </div>
                   </div>
                   {renderUsageList(rev.id)}
+                  <button
+                    onClick={() => {
+                      const supplies = (usageMap[rev.id] || []).map((u) => ({
+                        name: u.supply?.name ?? "—",
+                        unit: u.supply?.unit ?? "un",
+                        quantity: u.quantity_used,
+                      }));
+                      generateRevisionPDF({
+                        vehicleModel: rev.vehicleModel,
+                        vehiclePlate: rev.vehiclePlate,
+                        type: rev.type,
+                        scheduledDate: rev.scheduledDate,
+                        notes: rev.notes,
+                        supplies,
+                      });
+                    }}
+                    className="mt-2 text-[11px] font-medium px-3 py-1.5 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors flex items-center gap-1"
+                  >
+                    <FileText className="h-3 w-3" />
+                    Baixar Relatório PDF
+                  </button>
                 </div>
               ))}
             </div>
