@@ -121,9 +121,41 @@ export default function Workshop() {
 
   const handleCompleteRevision = async (rev: typeof revisions[0]) => {
     const isOilChange = rev.type === "Troca de óleo";
+    const hasPartsRegistered = (usageMap[rev.id] || []).length > 0;
+
+    // If no parts registered, require mechanic notes first
+    if (!hasPartsRegistered) {
+      setNotesDialog({
+        open: true,
+        revisionLabel: `${rev.vehicleModel} — ${rev.type}`,
+        pendingComplete: async (mechanicNotes: string) => {
+          // Save mechanic notes to the revision
+          const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+          if (uuidRegex.test(rev.id)) {
+            await supabase
+              .from("revisions")
+              .update({ mechanic_notes: mechanicNotes })
+              .eq("id", rev.id);
+          }
+
+          if (isOilChange) {
+            setOilDialog({
+              open: true,
+              vehicleId: rev.vehicleId,
+              vehicleModel: rev.vehicleModel,
+              vehiclePlate: rev.vehiclePlate,
+              revisionId: rev.id,
+              pendingComplete: () => finalizeCompletion(rev),
+            });
+          } else {
+            await finalizeCompletion(rev);
+          }
+        },
+      });
+      return;
+    }
 
     if (isOilChange) {
-      // Open mileage dialog first, completion happens after confirm
       setOilDialog({
         open: true,
         vehicleId: rev.vehicleId,
