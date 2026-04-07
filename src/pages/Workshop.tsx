@@ -377,11 +377,7 @@ export default function Workshop() {
                             <AddSupplyUsageDialog
                               revisionId={rev.id}
                               revisionLabel={`${rev.vehicleModel} — ${rev.type}`}
-                              onUsageAdded={(addedItems) => {
-                                setLocalUsageMap((prev) => ({
-                                  ...prev,
-                                  [rev.id]: [...(prev[rev.id] || []), ...addedItems],
-                                }));
+                              onUsageAdded={() => {
                                 fetchUsage();
                               }}
                             />
