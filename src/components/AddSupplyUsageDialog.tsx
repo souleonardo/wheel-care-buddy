@@ -113,9 +113,13 @@ export function AddSupplyUsageDialog({ revisionId, revisionLabel, onUsageAdded }
       return;
     }
 
+    // Check if revisionId is a valid UUID before passing it
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const validRevisionId = uuidRegex.test(revisionId) ? revisionId : null;
+
     const rows = items.map((item) => ({
       supply_id: item.supplyId,
-      revision_id: revisionId,
+      revision_id: validRevisionId,
       quantity_used: item.quantityUsed,
       used_by: userId,
       notes: notes || null,
