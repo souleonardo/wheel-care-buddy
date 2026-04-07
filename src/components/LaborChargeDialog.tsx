@@ -31,6 +31,7 @@ export function LaborChargeDialog({ open, onOpenChange, revisionLabel, onConfirm
   };
 
   const handleSkip = () => {
+    setConfirmSkip(false);
     setAmount("");
     setDescription("Mão de obra");
     onSkip();
