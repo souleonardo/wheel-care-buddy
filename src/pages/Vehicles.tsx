@@ -26,8 +26,7 @@ const statusConfig = {
 };
 
 export default function Vehicles() {
-  const { vehicles, removeVehicle } = useFleet();
-  const [crlvMap, setCrlvMap] = useState<Record<string, string>>({});
+  const { vehicles, removeVehicle, refreshVehicles } = useFleet();
 
   return (
     <MobileLayout title="Veículos">
@@ -65,8 +64,8 @@ export default function Vehicles() {
                     <UploadCRLVButton
                       vehicleId={vehicle.id}
                       vehiclePlate={vehicle.plate}
-                      hasCrlv={!!crlvMap[vehicle.id]}
-                      onUploaded={(url) => setCrlvMap((m) => ({ ...m, [vehicle.id]: url }))}
+                      hasCrlv={!!vehicle.crlvUrl}
+                      onUploaded={() => refreshVehicles()}
                     />
                     <EditRenterDialog vehicle={vehicle} />
                     <span className={cn("text-[10px] font-medium px-2.5 py-1 rounded-full", config.class)}>

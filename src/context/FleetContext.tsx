@@ -10,6 +10,7 @@ export interface Vehicle {
   renterName?: string;
   weeklyRate: number;
   nextRevision?: string;
+  crlvUrl?: string;
 }
 
 export interface Payment {
@@ -36,15 +37,6 @@ export interface Revision {
   mechanicNotes?: string;
 }
 
-const initialVehicles: Vehicle[] = [
-  { id: "1", plate: "ABC-1234", model: "Toyota Corolla", year: 2022, status: "rented", renterName: "Carlos Silva", weeklyRate: 800, nextRevision: "2026-04-01" },
-  { id: "2", plate: "DEF-5678", model: "Honda Civic", year: 2023, status: "rented", renterName: "Maria Santos", weeklyRate: 850, nextRevision: "2026-03-25" },
-  { id: "3", plate: "GHI-9012", model: "Volkswagen Gol", year: 2021, status: "available", weeklyRate: 600, nextRevision: "2026-04-15" },
-  { id: "4", plate: "JKL-3456", model: "Fiat Argo", year: 2023, status: "maintenance", weeklyRate: 650, nextRevision: "2026-03-20" },
-  { id: "5", plate: "MNO-7890", model: "Chevrolet Onix", year: 2022, status: "rented", renterName: "João Oliveira", weeklyRate: 700, nextRevision: "2026-05-01" },
-  { id: "6", plate: "PQR-1122", model: "Hyundai HB20", year: 2024, status: "available", weeklyRate: 750, nextRevision: "2026-06-10" },
-];
-
 const initialPayments: Payment[] = [
   { id: "1", vehicleId: "1", renterName: "Carlos Silva", vehiclePlate: "ABC-1234", amount: 800, dueDate: "2026-03-17", status: "paid", paidDate: "2026-03-17" },
   { id: "2", vehicleId: "2", renterName: "Maria Santos", vehiclePlate: "DEF-5678", amount: 850, dueDate: "2026-03-17", status: "overdue" },
@@ -56,6 +48,7 @@ const initialPayments: Payment[] = [
 
 interface FleetContextType {
   vehicles: Vehicle[];
+  vehiclesLoading: boolean;
   payments: Payment[];
   revisions: Revision[];
   revisionsLoading: boolean;
@@ -66,15 +59,46 @@ interface FleetContextType {
   markPaymentPaid: (id: string) => void;
   updateRevisionStatus: (id: string, status: Revision["status"]) => void;
   refreshRevisions: () => Promise<void>;
+  refreshVehicles: () => Promise<void>;
 }
 
 const FleetContext = createContext<FleetContextType | null>(null);
 
 export function FleetProvider({ children }: { children: ReactNode }) {
-  const [vehicles, setVehicles] = useState<Vehicle[]>(initialVehicles);
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [vehiclesLoading, setVehiclesLoading] = useState(true);
   const [payments, setPayments] = useState<Payment[]>(initialPayments);
   const [revisions, setRevisions] = useState<Revision[]>([]);
   const [revisionsLoading, setRevisionsLoading] = useState(true);
+
+  // Fetch vehicles from database
+  const fetchVehicles = useCallback(async () => {
+    const { data, error } = await supabase
+      .from("vehicles")
+      .select("*")
+      .order("model");
+
+    if (error) {
+      console.error("Error fetching vehicles:", error);
+      setVehiclesLoading(false);
+      return;
+    }
+
+    if (data) {
+      const mapped: Vehicle[] = data.map((v) => ({
+        id: v.id,
+        plate: v.plate,
+        model: v.model,
+        year: v.year,
+        status: v.status as Vehicle["status"],
+        weeklyRate: Number(v.weekly_rate),
+        nextRevision: v.next_revision ?? undefined,
+        crlvUrl: v.crlv_url ?? undefined,
+      }));
+      setVehicles(mapped);
+    }
+    setVehiclesLoading(false);
+  }, []);
 
   // Fetch revisions from database
   const fetchRevisions = useCallback(async () => {
@@ -107,18 +131,56 @@ export function FleetProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
+    fetchVehicles();
     fetchRevisions();
-  }, [fetchRevisions]);
+  }, [fetchVehicles, fetchRevisions]);
 
-  const addVehicle = useCallback((v: Omit<Vehicle, "id">) => {
-    setVehicles((prev) => [...prev, { ...v, id: crypto.randomUUID() }]);
-  }, []);
+  const addVehicle = useCallback(async (v: Omit<Vehicle, "id">) => {
+    const { error } = await supabase.from("vehicles").insert({
+      plate: v.plate,
+      model: v.model,
+      year: v.year,
+      status: v.status,
+      weekly_rate: v.weeklyRate,
+      next_revision: v.nextRevision || null,
+    });
 
-  const removeVehicle = useCallback((id: string) => {
+    if (error) {
+      console.error("Error adding vehicle:", error);
+      return;
+    }
+
+    await fetchVehicles();
+  }, [fetchVehicles]);
+
+  const removeVehicle = useCallback(async (id: string) => {
+    const { error } = await supabase.from("vehicles").delete().eq("id", id);
+    if (error) {
+      console.error("Error removing vehicle:", error);
+      return;
+    }
     setVehicles((prev) => prev.filter((v) => v.id !== id));
   }, []);
 
-  const updateVehicle = useCallback((id: string, updates: Partial<Omit<Vehicle, "id">>) => {
+  const updateVehicle = useCallback(async (id: string, updates: Partial<Omit<Vehicle, "id">>) => {
+    const dbUpdates: {
+      plate?: string; model?: string; year?: number; status?: string;
+      weekly_rate?: number; next_revision?: string | null; crlv_url?: string | null;
+    } = {};
+    if (updates.plate !== undefined) dbUpdates.plate = updates.plate;
+    if (updates.model !== undefined) dbUpdates.model = updates.model;
+    if (updates.year !== undefined) dbUpdates.year = updates.year;
+    if (updates.status !== undefined) dbUpdates.status = updates.status;
+    if (updates.weeklyRate !== undefined) dbUpdates.weekly_rate = updates.weeklyRate;
+    if (updates.nextRevision !== undefined) dbUpdates.next_revision = updates.nextRevision;
+    if (updates.crlvUrl !== undefined) dbUpdates.crlv_url = updates.crlvUrl;
+
+    const { error } = await supabase.from("vehicles").update(dbUpdates).eq("id", id);
+    if (error) {
+      console.error("Error updating vehicle:", error);
+      return;
+    }
+
     setVehicles((prev) =>
       prev.map((v) => (v.id === id ? { ...v, ...updates } : v))
     );
@@ -154,12 +216,10 @@ export function FleetProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const updateRevisionStatus = useCallback(async (id: string, status: Revision["status"]) => {
-    // Update locally first for instant UI feedback
     setRevisions((prev) =>
       prev.map((r) => (r.id === id ? { ...r, status } : r))
     );
 
-    // Persist to database
     const { error } = await supabase
       .from("revisions")
       .update({ status })
@@ -167,16 +227,16 @@ export function FleetProvider({ children }: { children: ReactNode }) {
 
     if (error) {
       console.error("Error updating revision status:", error);
-      // Revert on error
       await fetchRevisions();
     }
   }, [fetchRevisions]);
 
   return (
     <FleetContext.Provider value={{
-      vehicles, payments, revisions, revisionsLoading,
+      vehicles, vehiclesLoading, payments, revisions, revisionsLoading,
       addVehicle, removeVehicle, updateVehicle, addRevision,
-      markPaymentPaid, updateRevisionStatus, refreshRevisions: fetchRevisions,
+      markPaymentPaid, updateRevisionStatus,
+      refreshRevisions: fetchRevisions, refreshVehicles: fetchVehicles,
     }}>
       {children}
     </FleetContext.Provider>
