@@ -1,6 +1,6 @@
 import { useFleet } from "@/context/FleetContext";
 import { useEffect, useState, useCallback } from "react";
-import { Clock, CheckCircle2, Wrench, CalendarDays, Car, Package, FileText, Droplets, AlertTriangle } from "lucide-react";
+import { Clock, CheckCircle2, Wrench, CalendarDays, Car, Package, FileText, Droplets, AlertTriangle, Trash2 } from "lucide-react";
 import { MobileLayout } from "@/components/MobileLayout";
 import { AddSupplyUsageDialog } from "@/components/AddSupplyUsageDialog";
 import { OilChangeMileageDialog } from "@/components/OilChangeMileageDialog";
