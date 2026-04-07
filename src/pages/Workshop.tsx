@@ -4,6 +4,7 @@ import { Clock, CheckCircle2, Wrench, CalendarDays, Car, Package, FileText, Drop
 import { MobileLayout } from "@/components/MobileLayout";
 import { AddSupplyUsageDialog } from "@/components/AddSupplyUsageDialog";
 import { OilChangeMileageDialog } from "@/components/OilChangeMileageDialog";
+import { MechanicNotesDialog } from "@/components/MechanicNotesDialog";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { generateRevisionPDF } from "@/lib/generateRevisionPDF";
