@@ -6,6 +6,7 @@ import { Receipt, ChevronDown, ChevronUp, CheckCircle2, Clock, AlertTriangle, In
 import { cn } from "@/lib/utils";
 import { generateInvoicePDF } from "@/lib/generateInvoicePDF";
 import { toast } from "sonner";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 interface InvoiceItem {
   id: string;
@@ -49,6 +50,8 @@ export default function Invoices() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [confirmPayId, setConfirmPayId] = useState<string | null>(null);
+  const isAdmin = role === "admin";
 
   const fetchInvoices = useCallback(async () => {
     setLoading(true);
@@ -152,6 +155,37 @@ export default function Invoices() {
       toast.error("Erro ao gerar PDF");
       console.error(err);
     }
+  };
+
+  const handleMarkPaid = async () => {
+    if (!confirmPayId) return;
+    const inv = invoices.find((i) => i.id === confirmPayId);
+    if (!inv) return;
+
+    const today = new Date().toISOString().split("T")[0];
+
+    // Update invoice status
+    const { error: invErr } = await supabase
+      .from("invoices")
+      .update({ status: "paid" })
+      .eq("id", inv.id);
+
+    if (invErr) {
+      toast.error("Erro ao atualizar fatura: " + invErr.message);
+      setConfirmPayId(null);
+      return;
+    }
+
+    // Update related payment record
+    await supabase
+      .from("payments")
+      .update({ status: "paid", paid_date: today })
+      .eq("revision_id", inv.revision_id)
+      .eq("payment_type", "maintenance");
+
+    toast.success("Fatura marcada como paga");
+    setConfirmPayId(null);
+    fetchInvoices();
   };
 
   return (
@@ -279,6 +313,24 @@ export default function Invoices() {
                         <FileDown className="h-4 w-4" />
                         Baixar Fatura em PDF
                       </button>
+
+                      {/* Admin: mark as paid */}
+                      {isAdmin && inv.status !== "paid" && inv.status !== "informational" && (
+                        <button
+                          onClick={() => setConfirmPayId(inv.id)}
+                          className="w-full flex items-center justify-center gap-2 py-2 rounded-lg bg-success/10 text-success hover:bg-success/20 transition-colors text-xs font-medium"
+                        >
+                          <CheckCircle2 className="h-4 w-4" />
+                          Marcar como Paga
+                        </button>
+                      )}
+
+                      {inv.status === "paid" && (
+                        <div className="flex items-center justify-center gap-2 py-2 rounded-lg bg-success/10 text-success text-xs font-medium">
+                          <CheckCircle2 className="h-4 w-4" />
+                          Fatura paga
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -287,6 +339,22 @@ export default function Invoices() {
           </div>
         )}
       </div>
+
+      {/* Confirm payment dialog */}
+      <AlertDialog open={!!confirmPayId} onOpenChange={(open) => !open && setConfirmPayId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar pagamento</AlertDialogTitle>
+            <AlertDialogDescription>
+              Deseja marcar esta fatura como paga? O status será atualizado para o administrador e para o locatário.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleMarkPaid}>Confirmar</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </MobileLayout>
   );
 }
