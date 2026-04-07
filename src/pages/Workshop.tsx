@@ -5,6 +5,7 @@ import { MobileLayout } from "@/components/MobileLayout";
 import { AddSupplyUsageDialog } from "@/components/AddSupplyUsageDialog";
 import { OilChangeMileageDialog } from "@/components/OilChangeMileageDialog";
 import { MechanicNotesDialog } from "@/components/MechanicNotesDialog";
+import { LaborChargeDialog } from "@/components/LaborChargeDialog";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { generateRevisionPDF } from "@/lib/generateRevisionPDF";
@@ -62,6 +63,13 @@ export default function Workshop() {
     revisionLabel: string;
     pendingComplete: ((notes: string) => void) | null;
   }>({ open: false, revisionLabel: "", pendingComplete: null });
+
+  const [laborDialog, setLaborDialog] = useState<{
+    open: boolean;
+    revisionLabel: string;
+    revisionId: string;
+    pendingContinue: (() => void) | null;
+  }>({ open: false, revisionLabel: "", revisionId: "", pendingContinue: null });
 
   const fetchUsage = useCallback(async () => {
     const revisionIds = revisions.map((r) => r.id);
@@ -151,6 +159,36 @@ export default function Workshop() {
   };
 
   const handleCompleteRevision = async (rev: typeof revisions[0]) => {
+    // Step 1: Show labor charge dialog first
+    setLaborDialog({
+      open: true,
+      revisionLabel: `${rev.vehicleModel} — ${rev.type}`,
+      revisionId: rev.id,
+      pendingContinue: () => proceedAfterLabor(rev),
+    });
+  };
+
+  const saveLaborCharge = async (revisionId: string, data: { amount: number; description: string }) => {
+    const { data: userData } = await supabase.auth.getUser();
+    const mechanicId = userData?.user?.id;
+    if (!mechanicId) return;
+
+    const { error } = await supabase.from("labor_charges").insert({
+      revision_id: revisionId,
+      mechanic_id: mechanicId,
+      amount: data.amount,
+      description: data.description,
+    } as any);
+
+    if (error) {
+      console.error("Error saving labor charge:", error);
+      toast.error("Erro ao salvar mão de obra: " + error.message);
+    } else {
+      toast.success(`Mão de obra lançada: R$ ${data.amount.toFixed(2)}`);
+    }
+  };
+
+  const proceedAfterLabor = async (rev: typeof revisions[0]) => {
     const isOilChange = rev.type === "Troca de óleo";
     const hasPartsRegistered = (usageMap[rev.id] || []).length > 0 || (localUsageMap[rev.id] || []).length > 0;
 
@@ -160,7 +198,6 @@ export default function Workshop() {
         open: true,
         revisionLabel: `${rev.vehicleModel} — ${rev.type}`,
         pendingComplete: async (mechanicNotes: string) => {
-          // Save mechanic notes to the revision
           const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
           if (uuidRegex.test(rev.id)) {
             await supabase
@@ -543,6 +580,22 @@ export default function Workshop() {
         revisionLabel={notesDialog.revisionLabel}
         onConfirm={(notes) => {
           notesDialog.pendingComplete?.(notes);
+        }}
+      />
+
+      {/* Labor Charge Dialog */}
+      <LaborChargeDialog
+        open={laborDialog.open}
+        onOpenChange={(open) => {
+          if (!open) setLaborDialog((prev) => ({ ...prev, open: false }));
+        }}
+        revisionLabel={laborDialog.revisionLabel}
+        onConfirm={async (data) => {
+          await saveLaborCharge(laborDialog.revisionId, data);
+          laborDialog.pendingContinue?.();
+        }}
+        onSkip={() => {
+          laborDialog.pendingContinue?.();
         }}
       />
     </MobileLayout>

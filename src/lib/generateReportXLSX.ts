@@ -92,6 +92,15 @@ export async function generateMaintenanceReport(data: {
     mechanic_notes: string | null;
     parts: Array<{ name: string; quantity: number; unit: string; unit_cost: number }>;
   }>;
+  laborCharges: Array<{
+    vehicle_plate: string;
+    revision_type: string;
+    mechanic_name: string;
+    amount: number;
+    description: string;
+    status: string;
+    scheduled_date: string;
+  }>;
   dateRange: { from: string; to: string };
 }) {
   const wb = new ExcelJS.Workbook();
@@ -118,6 +127,30 @@ export async function generateMaintenanceReport(data: {
   ws2.getColumn(6).numFmt = CURRENCY_FMT;
   ws2.getColumn(7).numFmt = CURRENCY_FMT;
   autoWidth(ws2);
+
+  // Labor charges sheet
+  const ws3 = wb.addWorksheet("Mão de Obra");
+  ws3.addRow(["Veículo", "Tipo Revisão", "Data", "Mecânico", "Descrição", "Valor (R$)", "Status"]);
+  styleHeader(ws3);
+  const laborStatusMap: Record<string, string> = { pending: "Pendente", paid: "Pago" };
+  let totalLaborPending = 0;
+  let totalLaborPaid = 0;
+  data.laborCharges.forEach((l) => {
+    ws3.addRow([l.vehicle_plate, l.revision_type, l.scheduled_date, l.mechanic_name, l.description, l.amount, laborStatusMap[l.status] ?? l.status]);
+    if (l.status === "pending") totalLaborPending += l.amount;
+    else totalLaborPaid += l.amount;
+  });
+  ws3.getColumn(6).numFmt = CURRENCY_FMT;
+  const laborSummaryRow = data.laborCharges.length + 3;
+  ws3.getCell(`A${laborSummaryRow}`).value = "Total Pendente:";
+  ws3.getCell(`A${laborSummaryRow}`).font = { bold: true };
+  ws3.getCell(`B${laborSummaryRow}`).value = totalLaborPending;
+  ws3.getCell(`B${laborSummaryRow}`).numFmt = CURRENCY_FMT;
+  ws3.getCell(`A${laborSummaryRow + 1}`).value = "Total Pago:";
+  ws3.getCell(`A${laborSummaryRow + 1}`).font = { bold: true };
+  ws3.getCell(`B${laborSummaryRow + 1}`).value = totalLaborPaid;
+  ws3.getCell(`B${laborSummaryRow + 1}`).numFmt = CURRENCY_FMT;
+  autoWidth(ws3);
 
   const buf = await wb.xlsx.writeBuffer();
   saveAs(new Blob([buf]), `relatorio_manutencoes_${data.dateRange.from}_${data.dateRange.to}.xlsx`);
