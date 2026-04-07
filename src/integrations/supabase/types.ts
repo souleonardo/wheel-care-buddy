@@ -32,6 +32,98 @@ export type Database = {
         }
         Relationships: []
       }
+      invoice_items: {
+        Row: {
+          created_at: string
+          id: string
+          invoice_id: string
+          is_billable: boolean
+          quantity: number
+          supply_name: string
+          unit: string
+          unit_cost: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          invoice_id: string
+          is_billable?: boolean
+          quantity: number
+          supply_name: string
+          unit?: string
+          unit_cost?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          invoice_id?: string
+          is_billable?: boolean
+          quantity?: number
+          supply_name?: string
+          unit?: string
+          unit_cost?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoice_items_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invoices: {
+        Row: {
+          created_at: string
+          due_date: string
+          id: string
+          renter_id: string
+          revision_id: string
+          status: string
+          total_amount: number
+          updated_at: string
+          vehicle_id: string
+        }
+        Insert: {
+          created_at?: string
+          due_date: string
+          id?: string
+          renter_id: string
+          revision_id: string
+          status?: string
+          total_amount?: number
+          updated_at?: string
+          vehicle_id: string
+        }
+        Update: {
+          created_at?: string
+          due_date?: string
+          id?: string
+          renter_id?: string
+          revision_id?: string
+          status?: string
+          total_amount?: number
+          updated_at?: string
+          vehicle_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoices_revision_id_fkey"
+            columns: ["revision_id"]
+            isOneToOne: false
+            referencedRelation: "revisions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payments: {
         Row: {
           amount: number
