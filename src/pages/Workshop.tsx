@@ -200,37 +200,75 @@ export default function Workshop() {
   const finalizeCompletion = async (rev: typeof revisions[0]) => {
     updateRevisionStatus(rev.id, "completed");
 
-    // Calculate cost & generate maintenance payment if billable
     const usageItems = usageMap[rev.id] || [];
-    if (billableTypes.has(rev.type) && usageItems.length > 0) {
-      const totalCost = usageItems.reduce((sum, u) => {
-        const cost = u.supply?.unit_cost ?? 0;
-        return sum + u.quantity_used * cost;
-      }, 0);
 
-      if (totalCost > 0) {
-        const { data: assignment } = await supabase
-          .from("vehicle_assignments")
-          .select("renter_id")
-          .eq("vehicle_id", rev.vehicleId)
-          .eq("is_active", true)
-          .maybeSingle();
+    // Get active renter for this vehicle
+    const { data: assignment } = await supabase
+      .from("vehicle_assignments")
+      .select("renter_id")
+      .eq("vehicle_id", rev.vehicleId)
+      .eq("is_active", true)
+      .maybeSingle();
 
-        if (assignment?.renter_id) {
-          const dueDate = new Date();
-          dueDate.setDate(dueDate.getDate() + 7);
+    // Generate invoice with ALL items, charging only billable ones
+    if (assignment?.renter_id && usageItems.length > 0) {
+      const isBillableRevision = billableTypes.has(rev.type);
 
+      const items = usageItems.map((u) => ({
+        supply_name: u.supply?.name ?? "—",
+        quantity: u.quantity_used,
+        unit: u.supply?.unit ?? "un",
+        unit_cost: Number(u.supply?.unit_cost ?? 0),
+        is_billable: isBillableRevision,
+      }));
+
+      const totalBillable = items
+        .filter((i) => i.is_billable)
+        .reduce((sum, i) => sum + i.quantity * i.unit_cost, 0);
+
+      const dueDate = new Date();
+      dueDate.setDate(dueDate.getDate() + 7);
+
+      // Create invoice
+      const { data: invoice, error: invoiceError } = await supabase
+        .from("invoices")
+        .insert({
+          vehicle_id: rev.vehicleId,
+          renter_id: assignment.renter_id,
+          revision_id: rev.id,
+          total_amount: totalBillable,
+          status: totalBillable > 0 ? "pending" : "informational",
+          due_date: dueDate.toISOString().split("T")[0],
+        } as any)
+        .select("id")
+        .single();
+
+      if (!invoiceError && invoice) {
+        // Insert all items
+        const invoiceItems = items.map((i) => ({
+          invoice_id: (invoice as any).id,
+          ...i,
+        }));
+        await supabase.from("invoice_items").insert(invoiceItems as any);
+
+        // Also create payment record for billable amount
+        if (totalBillable > 0) {
           await supabase.from("payments").insert({
             vehicle_id: rev.vehicleId,
             renter_id: assignment.renter_id,
-            amount: totalCost,
+            amount: totalBillable,
             due_date: dueDate.toISOString().split("T")[0],
             status: "pending",
             payment_type: "maintenance",
             revision_id: rev.id,
           });
-          toast.success(`Fatura de manutenção gerada: R$ ${totalCost.toFixed(2)}`);
         }
+
+        toast.success(
+          totalBillable > 0
+            ? `Fatura gerada: R$ ${totalBillable.toFixed(2)}`
+            : "Fatura informativa gerada (sem cobrança)"
+        );
       }
     }
 
