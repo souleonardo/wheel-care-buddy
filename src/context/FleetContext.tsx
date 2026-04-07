@@ -163,7 +163,10 @@ export function FleetProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const updateVehicle = useCallback(async (id: string, updates: Partial<Omit<Vehicle, "id">>) => {
-    const dbUpdates: Record<string, any> = {};
+    const dbUpdates: {
+      plate?: string; model?: string; year?: number; status?: string;
+      weekly_rate?: number; next_revision?: string | null; crlv_url?: string | null;
+    } = {};
     if (updates.plate !== undefined) dbUpdates.plate = updates.plate;
     if (updates.model !== undefined) dbUpdates.model = updates.model;
     if (updates.year !== undefined) dbUpdates.year = updates.year;
