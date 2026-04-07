@@ -2,7 +2,6 @@ import { useFleet } from "@/context/FleetContext";
 import { Clock, CheckCircle2, Wrench, CalendarDays, Car } from "lucide-react";
 import { MobileLayout } from "@/components/MobileLayout";
 import { cn } from "@/lib/utils";
-import { cn } from "@/lib/utils";
 
 const statusConfig = {
   scheduled: { label: "Agendada", icon: CalendarDays, class: "bg-info/15 text-info", iconClass: "text-info" },
