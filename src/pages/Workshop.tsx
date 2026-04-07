@@ -11,14 +11,13 @@ import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { generateRevisionPDF } from "@/lib/generateRevisionPDF";
 import { toast } from "sonner";
-import { BillableConfigDialog } from "@/components/BillableConfigDialog";
 import { useAuth } from "@/hooks/useAuth";
 
 interface UsageRecord {
   id: string;
   revision_id: string;
   quantity_used: number;
-  supply: { name: string; unit: string; unit_cost: number } | null;
+  supply: { name: string; unit: string; unit_cost: number; is_billable: boolean; is_labor_billable: boolean } | null;
 }
 
 interface VehicleOilStatus {
@@ -49,7 +48,6 @@ export default function Workshop() {
 
   const [usageMap, setUsageMap] = useState<Record<string, UsageRecord[]>>({});
   const [localUsageMap, setLocalUsageMap] = useState<Record<string, { name: string; unit: string; quantity: number; unitCost: number }[]>>({});
-  const [billableTypes, setBillableTypes] = useState<Set<string>>(new Set());
   const [oilVehicles, setOilVehicles] = useState<VehicleOilStatus[]>([]);
   const [oilDialog, setOilDialog] = useState<{
     open: boolean;
@@ -79,7 +77,7 @@ export default function Workshop() {
 
     const { data } = await supabase
       .from("supply_usage")
-      .select("id, revision_id, quantity_used, supply:supplies(name, unit, unit_cost)")
+      .select("id, revision_id, quantity_used, supply:supplies(name, unit, unit_cost, is_billable, is_labor_billable)")
       .in("revision_id", revisionIds);
 
     if (data) {
@@ -93,12 +91,6 @@ export default function Workshop() {
     }
   }, [revisions]);
 
-  const fetchBillableTypes = useCallback(async () => {
-    const { data } = await supabase
-      .from("billable_service_types")
-      .select("service_type");
-    if (data) setBillableTypes(new Set(data.map((d: any) => d.service_type)));
-  }, []);
 
   const fetchOilStatus = useCallback(async () => {
     const { data } = await supabase
@@ -112,9 +104,8 @@ export default function Workshop() {
 
   useEffect(() => {
     fetchUsage();
-    fetchBillableTypes();
     fetchOilStatus();
-  }, [fetchUsage, fetchBillableTypes, fetchOilStatus]);
+  }, [fetchUsage, fetchOilStatus]);
 
   const handleRemoveUsage = async (usageId: string) => {
     const { error } = await supabase.from("supply_usage").delete().eq("id", usageId);
@@ -259,23 +250,26 @@ export default function Workshop() {
       .eq("revision_id", rev.id);
     const laborTotal = (laborChargesData ?? []).reduce((sum, c) => sum + Number(c.amount), 0);
 
-    const isBillableRevision = billableTypes.has(rev.type);
+    // Determine billability per supply item
+    const hasBillableItems = usageItems.some((u) => u.supply?.is_billable);
+    const hasLaborBillableItems = usageItems.some((u) => u.supply?.is_labor_billable);
 
-    // Generate invoice if there's a renter AND (has parts, has labor, or is billable type)
-    if (assignment?.renter_id && (usageItems.length > 0 || laborTotal > 0 || isBillableRevision)) {
+    // Generate invoice if there's a renter AND (has parts or labor)
+    if (assignment?.renter_id && (usageItems.length > 0 || laborTotal > 0)) {
       const items = usageItems.map((u) => ({
         supply_name: u.supply?.name ?? "—",
         quantity: u.quantity_used,
         unit: u.supply?.unit ?? "un",
         unit_cost: Number(u.supply?.unit_cost ?? 0),
-        is_billable: isBillableRevision,
+        is_billable: u.supply?.is_billable ?? false,
       }));
 
       const partsTotal = items
         .filter((i) => i.is_billable)
         .reduce((sum, i) => sum + i.quantity * i.unit_cost, 0);
 
-      const totalBillable = partsTotal + (isBillableRevision ? laborTotal : 0);
+      const billableLaborTotal = hasLaborBillableItems ? laborTotal : 0;
+      const totalBillable = partsTotal + billableLaborTotal;
 
       const dueDate = new Date();
       dueDate.setDate(dueDate.getDate() + 7);
@@ -383,11 +377,6 @@ export default function Workshop() {
           })}
         </div>
 
-        {isAdmin && (
-          <div className="flex justify-end">
-            <BillableConfigDialog onUpdated={fetchBillableTypes} />
-          </div>
-        )}
 
         {/* New Requests (pending_approval + scheduled) */}
         {pendingRevisions.length > 0 && (

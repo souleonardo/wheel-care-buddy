@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -19,6 +20,8 @@ interface Supply {
   min_quantity: number;
   unit: string;
   unit_cost: number;
+  is_billable: boolean;
+  is_labor_billable: boolean;
 }
 
 const unitLabels: Record<string, string> = {
@@ -41,7 +44,7 @@ export default function Supplies() {
   const [adjustQty, setAdjustQty] = useState(1);
 
   // New supply form
-  const [form, setForm] = useState({ name: "", description: "", quantity: 0, min_quantity: 5, unit: "un", unit_cost: 0 });
+  const [form, setForm] = useState({ name: "", description: "", quantity: 0, min_quantity: 5, unit: "un", unit_cost: 0, is_billable: false, is_labor_billable: false });
 
   const fetchSupplies = async () => {
     const { data, error } = await supabase.from("supplies").select("*").order("name");
@@ -61,10 +64,12 @@ export default function Supplies() {
       min_quantity: form.min_quantity,
       unit: form.unit,
       unit_cost: form.unit_cost,
-    });
+      is_billable: form.is_billable,
+      is_labor_billable: form.is_labor_billable,
+    } as any);
     if (error) { toast.error("Erro ao adicionar suprimento"); return; }
     toast.success("Suprimento adicionado");
-    setForm({ name: "", description: "", quantity: 0, min_quantity: 5, unit: "un", unit_cost: 0 });
+    setForm({ name: "", description: "", quantity: 0, min_quantity: 5, unit: "un", unit_cost: 0, is_billable: false, is_labor_billable: false });
     setAddOpen(false);
     fetchSupplies();
   };
@@ -179,6 +184,17 @@ export default function Supplies() {
                       <Input type="number" min={0} step={0.01} value={form.unit_cost} onChange={(e) => setForm({ ...form, unit_cost: +e.target.value })} />
                     </div>
                   </div>
+                  <div className="space-y-3 pt-2 border-t border-border/50">
+                    <p className="text-xs font-semibold text-muted-foreground">Cobrança ao locatário</p>
+                    <div className="flex items-center justify-between py-1">
+                      <Label className="text-sm">Cobrar peça na revisão</Label>
+                      <Switch checked={form.is_billable} onCheckedChange={(v) => setForm({ ...form, is_billable: v })} />
+                    </div>
+                    <div className="flex items-center justify-between py-1">
+                      <Label className="text-sm">Cobrar mão de obra</Label>
+                      <Switch checked={form.is_labor_billable} onCheckedChange={(v) => setForm({ ...form, is_labor_billable: v })} />
+                    </div>
+                  </div>
                   <Button onClick={handleAdd} className="w-full">Adicionar</Button>
                 </div>
               </DialogContent>
@@ -241,6 +257,40 @@ export default function Supplies() {
                         <span>Mín: {s.min_quantity}</span>
                         <span>R$ {s.unit_cost.toFixed(2)}/{s.unit}</span>
                       </div>
+                      {isAdmin && (
+                        <div className="flex flex-wrap gap-3 mt-2">
+                          <label className="flex items-center gap-1.5 text-[11px] text-muted-foreground cursor-pointer">
+                            <Switch
+                              className="scale-75"
+                              checked={s.is_billable}
+                              onCheckedChange={async (v) => {
+                                await supabase.from("supplies").update({ is_billable: v } as any).eq("id", s.id);
+                                setSupplies((prev) => prev.map((x) => x.id === s.id ? { ...x, is_billable: v } : x));
+                                toast.success(v ? "Peça cobrável" : "Peça não cobrável");
+                              }}
+                            />
+                            Cobrar peça
+                          </label>
+                          <label className="flex items-center gap-1.5 text-[11px] text-muted-foreground cursor-pointer">
+                            <Switch
+                              className="scale-75"
+                              checked={s.is_labor_billable}
+                              onCheckedChange={async (v) => {
+                                await supabase.from("supplies").update({ is_labor_billable: v } as any).eq("id", s.id);
+                                setSupplies((prev) => prev.map((x) => x.id === s.id ? { ...x, is_labor_billable: v } : x));
+                                toast.success(v ? "M.O. cobrável" : "M.O. não cobrável");
+                              }}
+                            />
+                            Cobrar M.O.
+                          </label>
+                        </div>
+                      )}
+                      {!isAdmin && (s.is_billable || s.is_labor_billable) && (
+                        <div className="flex gap-2 mt-2">
+                          {s.is_billable && <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">Peça cobrável</span>}
+                          {s.is_labor_billable && <span className="text-[10px] px-2 py-0.5 rounded-full bg-warning/10 text-warning font-medium">M.O. cobrável</span>}
+                        </div>
+                      )}
                       <div className="flex gap-2 mt-3">
                         <button
                           onClick={() => { setSelectedSupply(s); setAdjustQty(1); setAdjustOpen(true); }}
