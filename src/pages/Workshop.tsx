@@ -99,6 +99,12 @@ export default function Workshop() {
           })}
         </div>
 
+        {isAdmin && (
+          <div className="flex justify-end">
+            <BillableConfigDialog onUpdated={fetchBillableTypes} />
+          </div>
+        )}
+
         {/* Active */}
         <section>
           <h2 className="text-sm font-semibold text-foreground mb-3 uppercase tracking-wider">Serviços Ativos</h2>
