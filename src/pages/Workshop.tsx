@@ -1,8 +1,9 @@
 import { useFleet } from "@/context/FleetContext";
 import { useEffect, useState, useCallback } from "react";
-import { Clock, CheckCircle2, Wrench, CalendarDays, Car, Package, FileText } from "lucide-react";
+import { Clock, CheckCircle2, Wrench, CalendarDays, Car, Package, FileText, Droplets, AlertTriangle } from "lucide-react";
 import { MobileLayout } from "@/components/MobileLayout";
 import { AddSupplyUsageDialog } from "@/components/AddSupplyUsageDialog";
+import { OilChangeMileageDialog } from "@/components/OilChangeMileageDialog";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { generateRevisionPDF } from "@/lib/generateRevisionPDF";
@@ -15,6 +16,15 @@ interface UsageRecord {
   revision_id: string;
   quantity_used: number;
   supply: { name: string; unit: string; unit_cost: number } | null;
+}
+
+interface VehicleOilStatus {
+  id: string;
+  model: string;
+  plate: string;
+  current_mileage: number;
+  next_oil_change_km: number | null;
+  last_oil_change_date: string | null;
 }
 
 const statusConfig = {
@@ -32,6 +42,15 @@ export default function Workshop() {
 
   const [usageMap, setUsageMap] = useState<Record<string, UsageRecord[]>>({});
   const [billableTypes, setBillableTypes] = useState<Set<string>>(new Set());
+  const [oilVehicles, setOilVehicles] = useState<VehicleOilStatus[]>([]);
+  const [oilDialog, setOilDialog] = useState<{
+    open: boolean;
+    vehicleId: string;
+    vehicleModel: string;
+    vehiclePlate: string;
+    revisionId: string;
+    pendingComplete: (() => void) | null;
+  }>({ open: false, vehicleId: "", vehicleModel: "", vehiclePlate: "", revisionId: "", pendingComplete: null });
 
   const fetchUsage = useCallback(async () => {
     const revisionIds = revisions.map((r) => r.id);
@@ -60,10 +79,21 @@ export default function Workshop() {
     if (data) setBillableTypes(new Set(data.map((d: any) => d.service_type)));
   }, []);
 
+  const fetchOilStatus = useCallback(async () => {
+    const { data } = await supabase
+      .from("vehicles")
+      .select("id, model, plate, current_mileage, next_oil_change_km, last_oil_change_date")
+      .not("next_oil_change_km", "is", null)
+      .order("next_oil_change_km", { ascending: true });
+
+    if (data) setOilVehicles(data as VehicleOilStatus[]);
+  }, []);
+
   useEffect(() => {
     fetchUsage();
     fetchBillableTypes();
-  }, [fetchUsage, fetchBillableTypes]);
+    fetchOilStatus();
+  }, [fetchUsage, fetchBillableTypes, fetchOilStatus]);
 
   const renderUsageList = (revisionId: string) => {
     const items = usageMap[revisionId];
@@ -81,6 +111,93 @@ export default function Workshop() {
       </div>
     );
   };
+
+  const handleCompleteRevision = async (rev: typeof revisions[0]) => {
+    const isOilChange = rev.type === "Troca de óleo";
+
+    if (isOilChange) {
+      // Open mileage dialog first, completion happens after confirm
+      setOilDialog({
+        open: true,
+        vehicleId: rev.vehicleId,
+        vehicleModel: rev.vehicleModel,
+        vehiclePlate: rev.vehiclePlate,
+        revisionId: rev.id,
+        pendingComplete: () => finalizeCompletion(rev),
+      });
+    } else {
+      await finalizeCompletion(rev);
+    }
+  };
+
+  const finalizeCompletion = async (rev: typeof revisions[0]) => {
+    updateRevisionStatus(rev.id, "completed");
+
+    // Calculate cost & generate maintenance payment if billable
+    const usageItems = usageMap[rev.id] || [];
+    if (billableTypes.has(rev.type) && usageItems.length > 0) {
+      const totalCost = usageItems.reduce((sum, u) => {
+        const cost = u.supply?.unit_cost ?? 0;
+        return sum + u.quantity_used * cost;
+      }, 0);
+
+      if (totalCost > 0) {
+        const { data: assignment } = await supabase
+          .from("vehicle_assignments")
+          .select("renter_id")
+          .eq("vehicle_id", rev.vehicleId)
+          .eq("is_active", true)
+          .maybeSingle();
+
+        if (assignment?.renter_id) {
+          const dueDate = new Date();
+          dueDate.setDate(dueDate.getDate() + 7);
+
+          await supabase.from("payments").insert({
+            vehicle_id: rev.vehicleId,
+            renter_id: assignment.renter_id,
+            amount: totalCost,
+            due_date: dueDate.toISOString().split("T")[0],
+            status: "pending",
+            payment_type: "maintenance",
+            revision_id: rev.id,
+          });
+          toast.success(`Fatura de manutenção gerada: R$ ${totalCost.toFixed(2)}`);
+        }
+      }
+    }
+
+    // Generate PDF report
+    const supplies = usageItems.map((u) => ({
+      name: u.supply?.name ?? "—",
+      unit: u.supply?.unit ?? "un",
+      quantity: u.quantity_used,
+    }));
+    generateRevisionPDF({
+      vehicleModel: rev.vehicleModel,
+      vehiclePlate: rev.vehiclePlate,
+      type: rev.type,
+      scheduledDate: rev.scheduledDate,
+      notes: rev.notes,
+      supplies,
+    });
+
+    fetchOilStatus();
+  };
+
+  // Oil change status helpers
+  const getOilStatus = (v: VehicleOilStatus) => {
+    if (!v.next_oil_change_km) return null;
+    const remaining = v.next_oil_change_km - v.current_mileage;
+    if (remaining <= 0) return { label: "Vencida", class: "bg-destructive/15 text-destructive", urgent: true };
+    if (remaining <= 1000) return { label: `Faltam ${remaining.toLocaleString("pt-BR")} km`, class: "bg-warning/15 text-warning", urgent: true };
+    return { label: `Faltam ${remaining.toLocaleString("pt-BR")} km`, class: "bg-success/15 text-success", urgent: false };
+  };
+
+  const urgentOilVehicles = oilVehicles.filter((v) => {
+    const s = getOilStatus(v);
+    return s?.urgent;
+  });
 
   return (
     <MobileLayout title="Oficina — Agendamentos">
@@ -103,6 +220,56 @@ export default function Workshop() {
           <div className="flex justify-end">
             <BillableConfigDialog onUpdated={fetchBillableTypes} />
           </div>
+        )}
+
+        {/* Oil Change Status Panel */}
+        {oilVehicles.length > 0 && (
+          <section>
+            <h2 className="text-sm font-semibold text-foreground mb-3 uppercase tracking-wider flex items-center gap-1.5">
+              <Droplets className="h-4 w-4 text-info" />
+              Controle de Troca de Óleo
+            </h2>
+            {urgentOilVehicles.length > 0 && (
+              <div className="bg-destructive/10 border border-destructive/20 rounded-xl p-3 mb-3 flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4 text-destructive shrink-0" />
+                <p className="text-xs text-destructive font-medium">
+                  {urgentOilVehicles.length} veículo(s) com troca de óleo próxima ou vencida
+                </p>
+              </div>
+            )}
+            <div className="space-y-2">
+              {oilVehicles.map((v) => {
+                const status = getOilStatus(v);
+                if (!status) return null;
+                const remaining = v.next_oil_change_km! - v.current_mileage;
+                return (
+                  <div key={v.id} className="bg-card rounded-xl border border-border/50 p-3 flex items-center gap-3">
+                    <div className={cn("h-9 w-9 rounded-lg flex items-center justify-center shrink-0", status.class)}>
+                      <Droplets className="h-4 w-4" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-medium text-foreground truncate">{v.model}</p>
+                        <span className={cn("text-[10px] font-medium px-2 py-0.5 rounded-full whitespace-nowrap", status.class)}>
+                          {remaining <= 0 ? "Vencida" : `${remaining.toLocaleString("pt-BR")} km`}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-3 text-[11px] text-muted-foreground mt-0.5">
+                        <span>{v.plate}</span>
+                        <span>Atual: {v.current_mileage.toLocaleString("pt-BR")} km</span>
+                        <span>Próxima: {v.next_oil_change_km!.toLocaleString("pt-BR")} km</span>
+                      </div>
+                      {v.last_oil_change_date && (
+                        <p className="text-[10px] text-muted-foreground/70 mt-0.5">
+                          Última troca: {new Date(v.last_oil_change_date).toLocaleDateString("pt-BR")}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
         )}
 
         {/* Active */}
@@ -167,59 +334,7 @@ export default function Workshop() {
                               onUsageAdded={fetchUsage}
                             />
                             <button
-                              onClick={async () => {
-                                updateRevisionStatus(rev.id, "completed");
-
-                                // Calculate cost & generate maintenance payment if billable
-                                const usageItems = usageMap[rev.id] || [];
-                                if (billableTypes.has(rev.type) && usageItems.length > 0) {
-                                  const totalCost = usageItems.reduce((sum, u) => {
-                                    const cost = u.supply?.unit_cost ?? 0;
-                                    return sum + u.quantity_used * cost;
-                                  }, 0);
-
-                                  if (totalCost > 0) {
-                                    // Find the renter via vehicle_assignments
-                                    const { data: assignment } = await supabase
-                                      .from("vehicle_assignments")
-                                      .select("renter_id")
-                                      .eq("vehicle_id", rev.vehicleId)
-                                      .eq("is_active", true)
-                                      .maybeSingle();
-
-                                    if (assignment?.renter_id) {
-                                      const dueDate = new Date();
-                                      dueDate.setDate(dueDate.getDate() + 7);
-
-                                      await supabase.from("payments").insert({
-                                        vehicle_id: rev.vehicleId,
-                                        renter_id: assignment.renter_id,
-                                        amount: totalCost,
-                                        due_date: dueDate.toISOString().split("T")[0],
-                                        status: "pending",
-                                        payment_type: "maintenance",
-                                        revision_id: rev.id,
-                                      });
-                                      toast.success(`Fatura de manutenção gerada: R$ ${totalCost.toFixed(2)}`);
-                                    }
-                                  }
-                                }
-
-                                // Generate PDF report
-                                const supplies = usageItems.map((u) => ({
-                                  name: u.supply?.name ?? "—",
-                                  unit: u.supply?.unit ?? "un",
-                                  quantity: u.quantity_used,
-                                }));
-                                generateRevisionPDF({
-                                  vehicleModel: rev.vehicleModel,
-                                  vehiclePlate: rev.vehiclePlate,
-                                  type: rev.type,
-                                  scheduledDate: rev.scheduledDate,
-                                  notes: rev.notes,
-                                  supplies,
-                                });
-                              }}
+                              onClick={() => handleCompleteRevision(rev)}
                               className="text-[11px] font-medium px-3 py-1.5 rounded-lg bg-success/15 text-success hover:bg-success/25 transition-colors"
                             >
                               Concluir Serviço
@@ -277,6 +392,21 @@ export default function Workshop() {
           </section>
         )}
       </div>
+
+      {/* Oil Change Mileage Dialog */}
+      <OilChangeMileageDialog
+        open={oilDialog.open}
+        onOpenChange={(open) => {
+          if (!open) setOilDialog((prev) => ({ ...prev, open: false }));
+        }}
+        vehicleId={oilDialog.vehicleId}
+        vehicleModel={oilDialog.vehicleModel}
+        vehiclePlate={oilDialog.vehiclePlate}
+        revisionId={oilDialog.revisionId}
+        onConfirm={() => {
+          oilDialog.pendingComplete?.();
+        }}
+      />
     </MobileLayout>
   );
 }
