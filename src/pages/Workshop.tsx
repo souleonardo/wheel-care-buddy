@@ -128,7 +128,7 @@ export default function Workshop() {
 
   const handleCompleteRevision = async (rev: typeof revisions[0]) => {
     const isOilChange = rev.type === "Troca de óleo";
-    const hasPartsRegistered = (usageMap[rev.id] || []).length > 0;
+    const hasPartsRegistered = (usageMap[rev.id] || []).length > 0 || (localUsageMap[rev.id] || []).length > 0;
 
     // If no parts registered, require mechanic notes first
     if (!hasPartsRegistered) {
