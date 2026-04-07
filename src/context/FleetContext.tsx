@@ -14,18 +14,6 @@ export interface Vehicle {
   crlvExpiryDate?: string;
 }
 
-export interface Payment {
-  id: string;
-  vehicleId: string;
-  renterName: string;
-  vehiclePlate: string;
-  amount: number;
-  dueDate: string;
-  status: "paid" | "pending" | "overdue";
-  paidDate?: string;
-  paymentType?: "rental" | "maintenance";
-}
-
 export interface Revision {
   id: string;
   vehicleId: string;
@@ -39,26 +27,18 @@ export interface Revision {
   mechanicNotes?: string;
 }
 
-const initialPayments: Payment[] = [
-  { id: "1", vehicleId: "1", renterName: "Carlos Silva", vehiclePlate: "ABC-1234", amount: 800, dueDate: "2026-03-17", status: "paid", paidDate: "2026-03-17" },
-  { id: "2", vehicleId: "2", renterName: "Maria Santos", vehiclePlate: "DEF-5678", amount: 850, dueDate: "2026-03-17", status: "overdue" },
-  { id: "3", vehicleId: "5", renterName: "João Oliveira", vehiclePlate: "MNO-7890", amount: 700, dueDate: "2026-03-24", status: "pending" },
-  { id: "4", vehicleId: "1", renterName: "Carlos Silva", vehiclePlate: "ABC-1234", amount: 800, dueDate: "2026-03-24", status: "pending" },
-  { id: "5", vehicleId: "2", renterName: "Maria Santos", vehiclePlate: "DEF-5678", amount: 850, dueDate: "2026-03-24", status: "pending" },
-  { id: "6", vehicleId: "1", renterName: "Carlos Silva", vehiclePlate: "ABC-1234", amount: 800, dueDate: "2026-03-10", status: "paid", paidDate: "2026-03-10" },
-];
 
 interface FleetContextType {
   vehicles: Vehicle[];
   vehiclesLoading: boolean;
-  payments: Payment[];
+  
   revisions: Revision[];
   revisionsLoading: boolean;
   addVehicle: (v: Omit<Vehicle, "id">) => void;
   removeVehicle: (id: string) => void;
   updateVehicle: (id: string, updates: Partial<Omit<Vehicle, "id">>) => void;
   addRevision: (r: Omit<Revision, "id">) => void;
-  markPaymentPaid: (id: string) => void;
+  
   updateRevisionStatus: (id: string, status: Revision["status"]) => void;
   refreshRevisions: () => Promise<void>;
   refreshVehicles: () => Promise<void>;
@@ -69,7 +49,7 @@ const FleetContext = createContext<FleetContextType | null>(null);
 export function FleetProvider({ children }: { children: ReactNode }) {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [vehiclesLoading, setVehiclesLoading] = useState(true);
-  const [payments, setPayments] = useState<Payment[]>(initialPayments);
+  
   const [revisions, setRevisions] = useState<Revision[]>([]);
   const [revisionsLoading, setRevisionsLoading] = useState(true);
 
@@ -247,13 +227,6 @@ export function FleetProvider({ children }: { children: ReactNode }) {
     await fetchRevisions();
   }, [fetchRevisions]);
 
-  const markPaymentPaid = useCallback((id: string) => {
-    setPayments((prev) =>
-      prev.map((p) =>
-        p.id === id ? { ...p, status: "paid" as const, paidDate: new Date().toISOString().split("T")[0] } : p
-      )
-    );
-  }, []);
 
   const updateRevisionStatus = useCallback(async (id: string, status: Revision["status"]) => {
     // Find the revision to get vehicleId
@@ -308,9 +281,9 @@ export function FleetProvider({ children }: { children: ReactNode }) {
 
   return (
     <FleetContext.Provider value={{
-      vehicles, vehiclesLoading, payments, revisions, revisionsLoading,
+      vehicles, vehiclesLoading, revisions, revisionsLoading,
       addVehicle, removeVehicle, updateVehicle, addRevision,
-      markPaymentPaid, updateRevisionStatus,
+      updateRevisionStatus,
       refreshRevisions: fetchRevisions, refreshVehicles: fetchVehicles,
     }}>
       {children}

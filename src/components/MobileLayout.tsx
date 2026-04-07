@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Car, CreditCard, Wrench, LogOut, User, FileText, Users, Package, BarChart3, Receipt } from "lucide-react";
+import { LayoutDashboard, Car, Wrench, LogOut, User, FileText, Users, Package, BarChart3, Receipt } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth, AppRole } from "@/hooks/useAuth";
 
@@ -14,7 +14,7 @@ interface TabDef {
 const allTabs: TabDef[] = [
   { label: "Painel", icon: LayoutDashboard, path: "/", roles: ["admin"] },
   { label: "Veículos", icon: Car, path: "/veiculos", roles: ["admin"] },
-  { label: "Pagamentos", icon: CreditCard, path: "/pagamentos", roles: ["admin"] },
+  
   { label: "Revisões", icon: Wrench, path: "/revisoes", roles: ["admin", "locador"] },
   { label: "Documentos", icon: FileText, path: "/documentos", roles: ["locador"] },
   { label: "Faturas", icon: Receipt, path: "/faturas", roles: ["admin", "locador"] },

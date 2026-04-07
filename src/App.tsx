@@ -8,7 +8,7 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { FleetProvider } from "@/context/FleetContext";
 import Dashboard from "./pages/Dashboard";
 import Vehicles from "./pages/Vehicles";
-import Payments from "./pages/Payments";
+
 import Revisions from "./pages/Revisions";
 import Workshop from "./pages/Workshop";
 import Documents from "./pages/Documents";
@@ -33,7 +33,7 @@ const App = () => (
               <Route path="/login" element={<Login />} />
               <Route path="/" element={<ProtectedRoute allowedRoles={["admin"]}><Dashboard /></ProtectedRoute>} />
               <Route path="/veiculos" element={<ProtectedRoute allowedRoles={["admin"]}><Vehicles /></ProtectedRoute>} />
-              <Route path="/pagamentos" element={<ProtectedRoute allowedRoles={["admin"]}><Payments /></ProtectedRoute>} />
+              
               <Route path="/revisoes" element={<ProtectedRoute allowedRoles={["admin", "locador"]}><Revisions /></ProtectedRoute>} />
               <Route path="/documentos" element={<ProtectedRoute allowedRoles={["locador"]}><Documents /></ProtectedRoute>} />
               <Route path="/usuarios" element={<ProtectedRoute allowedRoles={["admin"]}><Users /></ProtectedRoute>} />
