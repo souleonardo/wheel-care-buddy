@@ -14,6 +14,24 @@ export type Database = {
   }
   public: {
     Tables: {
+      billable_service_types: {
+        Row: {
+          created_at: string
+          id: string
+          service_type: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          service_type: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          service_type?: string
+        }
+        Relationships: []
+      }
       payments: {
         Row: {
           amount: number
