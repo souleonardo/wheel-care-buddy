@@ -227,10 +227,11 @@ export function FleetProvider({ children }: { children: ReactNode }) {
       vehicle_id: r.vehicleId,
       type: r.type,
       scheduled_date: r.scheduledDate,
+      scheduled_time: r.scheduledTime || null,
       status: r.status,
       notes: r.notes || null,
       requested_by: userId || null,
-    });
+    } as any);
 
     if (error) {
       console.error("Error adding revision:", error);
