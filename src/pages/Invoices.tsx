@@ -356,6 +356,8 @@ export default function Invoices() {
   useEffect(() => { fetchAll(); fetchViolations(); }, [fetchAll, fetchViolations]);
 
   const filteredInvoices = filter === "all" ? allInvoices : allInvoices.filter((i) => i.type === filter);
+  const showViolations = filter === "all" || filter === "violation";
+  const showInvoices = filter === "all" || filter === "rental" || filter === "maintenance";
 
   const formatDate = (d: string) => {
     try { return new Date(d + (d.includes("T") ? "" : "T00:00:00")).toLocaleDateString("pt-BR"); }
