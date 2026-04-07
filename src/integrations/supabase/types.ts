@@ -132,6 +132,87 @@ export type Database = {
           },
         ]
       }
+      supplies: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          min_quantity: number
+          name: string
+          quantity: number
+          unit: string
+          unit_cost: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          min_quantity?: number
+          name: string
+          quantity?: number
+          unit?: string
+          unit_cost?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          min_quantity?: number
+          name?: string
+          quantity?: number
+          unit?: string
+          unit_cost?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      supply_usage: {
+        Row: {
+          created_at: string
+          id: string
+          notes: string | null
+          quantity_used: number
+          revision_id: string | null
+          supply_id: string
+          used_by: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          quantity_used: number
+          revision_id?: string | null
+          supply_id: string
+          used_by: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          quantity_used?: number
+          revision_id?: string | null
+          supply_id?: string
+          used_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supply_usage_revision_id_fkey"
+            columns: ["revision_id"]
+            isOneToOne: false
+            referencedRelation: "revisions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supply_usage_supply_id_fkey"
+            columns: ["supply_id"]
+            isOneToOne: false
+            referencedRelation: "supplies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           id: string
