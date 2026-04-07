@@ -107,11 +107,13 @@ export function EditRenterDialog({ vehicle }: EditRenterDialogProps) {
 
     try {
       // Deactivate any existing active assignment for this vehicle
-      await supabase
+      const { error: deactivateError } = await supabase
         .from("vehicle_assignments")
         .update({ is_active: false, released_at: new Date().toISOString() })
         .eq("vehicle_id", vehicle.id)
         .eq("is_active", true);
+
+      if (deactivateError) throw deactivateError;
 
       // Create new assignment
       const { error } = await supabase.from("vehicle_assignments").insert({
