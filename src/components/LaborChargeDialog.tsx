@@ -18,6 +18,7 @@ interface Props {
 export function LaborChargeDialog({ open, onOpenChange, revisionLabel, onConfirm, onSkip }: Props) {
   const [amount, setAmount] = useState("");
   const [description, setDescription] = useState("Mão de obra");
+  const [confirmSkip, setConfirmSkip] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
