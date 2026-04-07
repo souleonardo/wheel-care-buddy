@@ -68,6 +68,11 @@ export default function Vehicles() {
                       hasCrlv={!!vehicle.crlvUrl}
                       onUploaded={() => refreshVehicles()}
                     />
+                    <VehicleHistoryDialog
+                      vehicleId={vehicle.id}
+                      vehiclePlate={vehicle.plate}
+                      vehicleModel={vehicle.model}
+                    />
                     <EditRenterDialog vehicle={vehicle} />
                     <span className={cn("text-[10px] font-medium px-2.5 py-1 rounded-full", config.class)}>
                       {config.label}
