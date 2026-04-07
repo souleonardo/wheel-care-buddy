@@ -365,6 +365,33 @@ export default function Invoices() {
     catch { return d; }
   };
 
+  // Pending items for unified invoice
+  const pendingInvoices = allInvoices.filter((i) => i.status === "pending" || i.status === "overdue");
+  const pendingViolations = violations.filter((v) => v.status === "pending" || v.status === "overdue");
+  const totalPendingItems = pendingInvoices.length + pendingViolations.length;
+
+  const handleDownloadUnifiedPDF = () => {
+    const renterName = pendingInvoices[0]?.renter_name || pendingViolations[0]?.renter_name || "Locatário";
+    const entries = [
+      ...pendingInvoices.map((inv) => ({
+        type: inv.type as "rental" | "maintenance" | "violation",
+        description: inv.type === "rental" ? `Aluguel ${inv.frequency_label ?? ""}` : `${inv.revision_type ?? "Manutenção"}`,
+        vehicleInfo: `${inv.vehicle_model} ${inv.vehicle_plate}`,
+        dueDate: inv.due_date,
+        amount: inv.total_amount,
+      })),
+      ...pendingViolations.map((v) => ({
+        type: "violation" as const,
+        description: v.description,
+        vehicleInfo: `${v.vehicle_model} ${v.vehicle_plate}`,
+        dueDate: v.due_date,
+        amount: v.amount,
+      })),
+    ];
+    generateUnifiedInvoicePDF({ renterName, entries });
+    toast.success("Fatura unificada gerada com sucesso");
+  };
+
   const handleDownloadPDF = (inv: UnifiedInvoice) => {
     try {
       generateInvoicePDF({
