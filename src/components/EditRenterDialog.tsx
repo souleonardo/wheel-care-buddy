@@ -6,7 +6,12 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useFleet, Vehicle } from "@/context/FleetContext";
 import { supabase } from "@/integrations/supabase/client";
-import { UserPen, Upload, Loader2, FileCheck } from "lucide-react";
+import { UserPen, Upload, Loader2, FileCheck, CalendarIcon } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 interface EditRenterDialogProps {
