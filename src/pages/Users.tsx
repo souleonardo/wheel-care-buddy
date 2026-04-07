@@ -55,7 +55,7 @@ export default function Users() {
     try {
       // Fetch profiles and roles
       const [profilesRes, rolesRes, authUsersRes] = await Promise.all([
-        supabase.from("profiles").select("user_id, full_name").order("created_at", { ascending: false }),
+        supabase.from("profiles").select("user_id, full_name, cpf, cnh_number").order("created_at", { ascending: false }),
         supabase.from("user_roles").select("user_id, role"),
         supabase.functions.invoke("manage-users", { body: { action: "list" } }),
       ]);
