@@ -59,7 +59,7 @@ export function OilChangeMileageDialog({
       .from("vehicles")
       .update({
         current_mileage: km,
-        next_oil_change_km: nextKm,
+        next_oil_change_km: nextOilChangeKm,
         last_oil_change_date: new Date().toISOString().split("T")[0],
       })
       .eq("id", vehicleId);
@@ -71,7 +71,7 @@ export function OilChangeMileageDialog({
         .from("revisions")
         .update({
           mileage_at_service: km,
-          next_oil_change_km: nextKm,
+          next_oil_change_km: nextOilChangeKm,
         })
         .eq("id", revisionId);
     }
@@ -79,7 +79,7 @@ export function OilChangeMileageDialog({
     toast.success("Quilometragem registrada!");
     setLoading(false);
     setCurrentKm("");
-    setNextOilChangeKm("");
+    setSelectedRange("");
     onOpenChange(false);
     onConfirm();
   };
@@ -107,20 +107,28 @@ export function OilChangeMileageDialog({
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="nextOilKm" className="text-xs">Próxima Troca de Óleo (km)</Label>
-            <Input
-              id="nextOilKm"
-              type="number"
-              placeholder="Ex: 55000"
-              value={nextOilChangeKm}
-              onChange={(e) => setNextOilChangeKm(e.target.value)}
-              min={1}
-              required
-            />
-            {currentKm && nextOilChangeKm && Number(nextOilChangeKm) > Number(currentKm) && (
-              <p className="text-[10px] text-muted-foreground">
-                Faltam {(Number(nextOilChangeKm) - Number(currentKm)).toLocaleString("pt-BR")} km para a próxima troca
-              </p>
+            <Label className="text-xs">Intervalo até a Próxima Troca</Label>
+            <Select value={selectedRange} onValueChange={setSelectedRange}>
+              <SelectTrigger className="h-9 text-xs">
+                <SelectValue placeholder="Selecione o intervalo..." />
+              </SelectTrigger>
+              <SelectContent>
+                {kmRangeOptions.map((km) => (
+                  <SelectItem key={km} value={String(km)} className="text-xs">
+                    +{km.toLocaleString("pt-BR")} km
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {currentKm && nextOilChangeKm > 0 && (
+              <div className="bg-muted/50 rounded-lg px-3 py-2 mt-1">
+                <p className="text-xs text-muted-foreground">
+                  Próxima troca em: <span className="font-bold text-foreground">{nextOilChangeKm.toLocaleString("pt-BR")} km</span>
+                </p>
+                <p className="text-[10px] text-muted-foreground">
+                  (atual {Number(currentKm).toLocaleString("pt-BR")} + {Number(selectedRange).toLocaleString("pt-BR")} km)
+                </p>
+              </div>
             )}
           </div>
           <Button type="submit" disabled={loading} className="w-full gradient-primary text-primary-foreground">
