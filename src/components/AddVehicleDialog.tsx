@@ -17,7 +17,6 @@ export function AddVehicleDialog() {
     year: new Date().getFullYear().toString(),
     weeklyRate: "",
     status: "available" as Vehicle["status"],
-    renterName: "",
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -30,10 +29,9 @@ export function AddVehicleDialog() {
       year: parseInt(form.year),
       weeklyRate: parseFloat(form.weeklyRate),
       status: form.status,
-      renterName: form.status === "rented" ? form.renterName : undefined,
     });
 
-    setForm({ plate: "", model: "", year: new Date().getFullYear().toString(), weeklyRate: "", status: "available", renterName: "" });
+    setForm({ plate: "", model: "", year: new Date().getFullYear().toString(), weeklyRate: "", status: "available" });
     setOpen(false);
   };
 
@@ -75,18 +73,11 @@ export function AddVehicleDialog() {
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="available">Disponível</SelectItem>
-                  <SelectItem value="rented">Alugado</SelectItem>
                   <SelectItem value="maintenance">Manutenção</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
-          {form.status === "rented" && (
-            <div className="space-y-1.5">
-              <Label htmlFor="renterName">Nome do Locatário</Label>
-              <Input id="renterName" placeholder="Nome completo" value={form.renterName} onChange={(e) => setForm((f) => ({ ...f, renterName: e.target.value }))} maxLength={100} />
-            </div>
-          )}
           <Button type="submit" className="w-full gradient-primary text-primary-foreground">Cadastrar Veículo</Button>
         </form>
       </DialogContent>
