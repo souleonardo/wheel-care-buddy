@@ -22,6 +22,8 @@ interface UserWithRole {
   role: AppRole | null;
   email?: string;
   lastSignIn?: string | null;
+  cpf?: string | null;
+  cnh_number?: string | null;
 }
 
 const roleBadge: Record<AppRole, { label: string; variant: "default" | "secondary" | "outline" }> = {
@@ -55,7 +57,7 @@ export default function Users() {
     try {
       // Fetch profiles and roles
       const [profilesRes, rolesRes, authUsersRes] = await Promise.all([
-        supabase.from("profiles").select("user_id, full_name").order("created_at", { ascending: false }),
+        supabase.from("profiles").select("user_id, full_name, cpf, cnh_number").order("created_at", { ascending: false }),
         supabase.from("user_roles").select("user_id, role"),
         supabase.functions.invoke("manage-users", { body: { action: "list" } }),
       ]);
@@ -80,6 +82,8 @@ export default function Users() {
           role: roleMap.get(p.user_id) ?? null,
           email: authMap.get(p.user_id)?.email,
           lastSignIn: authMap.get(p.user_id)?.lastSignIn,
+          cpf: p.cpf,
+          cnh_number: p.cnh_number,
         }))
       );
     } catch (err) {
@@ -322,6 +326,18 @@ export default function Users() {
                         <div className="flex items-center gap-1.5">
                           <Mail className="h-3 w-3 shrink-0" />
                           <span className="truncate">{u.email}</span>
+                        </div>
+                      )}
+                      {u.cpf && (
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-medium shrink-0">CPF:</span>
+                          <span>{u.cpf}</span>
+                        </div>
+                      )}
+                      {u.cnh_number && (
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-medium shrink-0">CNH:</span>
+                          <span>{u.cnh_number}</span>
                         </div>
                       )}
                       <div className="flex items-center gap-1.5">
