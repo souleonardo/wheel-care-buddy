@@ -404,6 +404,62 @@ export type Database = {
           },
         ]
       }
+      traffic_violations: {
+        Row: {
+          amount: number
+          auto_number: string | null
+          created_at: string
+          description: string
+          due_date: string
+          id: string
+          paid_date: string | null
+          renter_id: string
+          source: string
+          status: string
+          updated_at: string
+          vehicle_id: string
+          violation_date: string
+        }
+        Insert: {
+          amount?: number
+          auto_number?: string | null
+          created_at?: string
+          description: string
+          due_date: string
+          id?: string
+          paid_date?: string | null
+          renter_id: string
+          source?: string
+          status?: string
+          updated_at?: string
+          vehicle_id: string
+          violation_date: string
+        }
+        Update: {
+          amount?: number
+          auto_number?: string | null
+          created_at?: string
+          description?: string
+          due_date?: string
+          id?: string
+          paid_date?: string | null
+          renter_id?: string
+          source?: string
+          status?: string
+          updated_at?: string
+          vehicle_id?: string
+          violation_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "traffic_violations_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           id: string
