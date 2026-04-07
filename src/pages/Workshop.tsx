@@ -254,13 +254,14 @@ export default function Workshop() {
     const hasBillableItems = usageItems.some((u) => u.supply?.is_billable);
     const hasLaborBillableItems = usageItems.some((u) => u.supply?.is_labor_billable);
 
-    // Generate invoice if there's a renter AND (has parts or labor)
-    if (assignment?.renter_id && (usageItems.length > 0 || laborTotal > 0)) {
+    // Always generate invoice if there's a renter (all items listed, only billable ones charged)
+    if (assignment?.renter_id) {
+      // All items listed in invoice; billable items keep their cost, non-billable show 0
       const items = usageItems.map((u) => ({
         supply_name: u.supply?.name ?? "—",
         quantity: u.quantity_used,
         unit: u.supply?.unit ?? "un",
-        unit_cost: Number(u.supply?.unit_cost ?? 0),
+        unit_cost: (u.supply?.is_billable) ? Number(u.supply?.unit_cost ?? 0) : 0,
         is_billable: u.supply?.is_billable ?? false,
       }));
 
@@ -289,7 +290,7 @@ export default function Workshop() {
         .single();
 
       if (!invoiceError && invoice) {
-        // Insert supply items (if any)
+        // Insert ALL items (billable and non-billable for transparency)
         if (items.length > 0) {
           const invoiceItems = items.map((i) => ({
             invoice_id: (invoice as any).id,
@@ -298,7 +299,7 @@ export default function Workshop() {
           await supabase.from("invoice_items").insert(invoiceItems as any);
         }
 
-        // Also create payment record for billable amount
+        // Create payment record only if there's a billable amount
         if (totalBillable > 0) {
           await supabase.from("payments").insert({
             vehicle_id: rev.vehicleId,
