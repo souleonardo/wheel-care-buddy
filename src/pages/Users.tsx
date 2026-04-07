@@ -40,6 +40,9 @@ export default function Users() {
     password: "",
     fullName: "",
     role: "locador" as CreateRole,
+    cpf: "",
+    cnhNumber: "",
+    cnhExpiryDate: "",
   });
 
   // Reset password state
@@ -94,6 +97,17 @@ export default function Users() {
     e.preventDefault();
     if (!form.email || !form.password || !form.fullName) return;
 
+    if (form.role === "locador") {
+      if (!form.cpf.trim()) {
+        toast.error("CPF é obrigatório para locadores");
+        return;
+      }
+      if (!form.cnhExpiryDate) {
+        toast.error("Validade da CNH é obrigatória para locadores");
+        return;
+      }
+    }
+
     setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke("create-user", {
@@ -102,6 +116,11 @@ export default function Users() {
           password: form.password,
           fullName: form.fullName,
           role: form.role,
+          ...(form.role === "locador" ? {
+            cpf: form.cpf.trim(),
+            cnhNumber: form.cnhNumber.trim() || undefined,
+            cnhExpiryDate: form.cnhExpiryDate || undefined,
+          } : {}),
         },
       });
 
@@ -109,7 +128,7 @@ export default function Users() {
       if (data?.error) throw new Error(data.error);
 
       toast.success(`Usuário ${form.fullName} criado como ${form.role === "locador" ? "Locador" : "Mecânico"}!`);
-      setForm({ email: "", password: "", fullName: "", role: "locador" });
+      setForm({ email: "", password: "", fullName: "", role: "locador", cpf: "", cnhNumber: "", cnhExpiryDate: "" });
       setOpen(false);
       fetchUsers();
     } catch (err: any) {
