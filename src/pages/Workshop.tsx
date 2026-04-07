@@ -485,15 +485,22 @@ export default function Workshop() {
                   </div>
                   {renderUsageList(rev.id)}
                   <button
-                    onClick={() => {
+                    onClick={async () => {
                       const supplies = (usageMap[rev.id] || []).map((u) => ({
                         name: u.supply?.name ?? "—",
                         unit: u.supply?.unit ?? "un",
                         quantity: u.quantity_used,
                       }));
+                      const { data: vd } = await supabase
+                        .from("vehicles")
+                        .select("chassis, renavam")
+                        .eq("id", rev.vehicleId)
+                        .single();
                       generateRevisionPDF({
                         vehicleModel: rev.vehicleModel,
                         vehiclePlate: rev.vehiclePlate,
+                        vehicleChassis: (vd as any)?.chassis,
+                        vehicleRenavam: (vd as any)?.renavam,
                         type: rev.type,
                         scheduledDate: rev.scheduledDate,
                         notes: rev.notes,
