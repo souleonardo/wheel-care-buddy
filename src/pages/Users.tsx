@@ -5,10 +5,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { EditUserDialog } from "@/components/EditUserDialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, UserPlus, Loader2, Users as UsersIcon, KeyRound, Mail, Clock } from "lucide-react";
+import { Plus, UserPlus, Loader2, Users as UsersIcon, KeyRound, Mail, Clock, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -24,6 +25,7 @@ interface UserWithRole {
   lastSignIn?: string | null;
   cpf?: string | null;
   cnh_number?: string | null;
+  cnh_expiry_date?: string | null;
 }
 
 const roleBadge: Record<AppRole, { label: string; variant: "default" | "secondary" | "outline" }> = {
@@ -52,12 +54,15 @@ export default function Users() {
   const [newPassword, setNewPassword] = useState("");
   const [resetting, setResetting] = useState(false);
 
+  // Edit user state
+  const [editUser, setEditUser] = useState<UserWithRole | null>(null);
+
   const fetchUsers = useCallback(async () => {
     setLoadingUsers(true);
     try {
       // Fetch profiles and roles
       const [profilesRes, rolesRes, authUsersRes] = await Promise.all([
-        supabase.from("profiles").select("user_id, full_name, cpf, cnh_number").order("created_at", { ascending: false }),
+        supabase.from("profiles").select("user_id, full_name, cpf, cnh_number, cnh_expiry_date").order("created_at", { ascending: false }),
         supabase.from("user_roles").select("user_id, role"),
         supabase.functions.invoke("manage-users", { body: { action: "list" } }),
       ]);
@@ -84,6 +89,7 @@ export default function Users() {
           lastSignIn: authMap.get(p.user_id)?.lastSignIn,
           cpf: p.cpf,
           cnh_number: p.cnh_number,
+          cnh_expiry_date: p.cnh_expiry_date,
         }))
       );
     } catch (err) {
