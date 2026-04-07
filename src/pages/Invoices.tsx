@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Receipt, ChevronDown, ChevronUp, CheckCircle2, Clock, AlertTriangle, Info, FileDown, Car, Plus, ShieldAlert, Upload } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { generateInvoicePDF } from "@/lib/generateInvoicePDF";
+import { generateUnifiedInvoicePDF } from "@/lib/generateUnifiedInvoicePDF";
 import { toast } from "sonner";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -364,6 +365,33 @@ export default function Invoices() {
     catch { return d; }
   };
 
+  // Pending items for unified invoice
+  const pendingInvoices = allInvoices.filter((i) => i.status === "pending" || i.status === "overdue");
+  const pendingViolations = violations.filter((v) => v.status === "pending" || v.status === "overdue");
+  const totalPendingItems = pendingInvoices.length + pendingViolations.length;
+
+  const handleDownloadUnifiedPDF = () => {
+    const renterName = pendingInvoices[0]?.renter_name || pendingViolations[0]?.renter_name || "Locatário";
+    const entries = [
+      ...pendingInvoices.map((inv) => ({
+        type: inv.type as "rental" | "maintenance" | "violation",
+        description: inv.type === "rental" ? `Aluguel ${inv.frequency_label ?? ""}` : `${inv.revision_type ?? "Manutenção"}`,
+        vehicleInfo: `${inv.vehicle_model} ${inv.vehicle_plate}`,
+        dueDate: inv.due_date,
+        amount: inv.total_amount,
+      })),
+      ...pendingViolations.map((v) => ({
+        type: "violation" as const,
+        description: v.description,
+        vehicleInfo: `${v.vehicle_model} ${v.vehicle_plate}`,
+        dueDate: v.due_date,
+        amount: v.amount,
+      })),
+    ];
+    generateUnifiedInvoicePDF({ renterName, entries });
+    toast.success("Fatura unificada gerada com sucesso");
+  };
+
   const handleDownloadPDF = (inv: UnifiedInvoice) => {
     try {
       generateInvoicePDF({
@@ -504,6 +532,14 @@ export default function Invoices() {
             </button>
           ))}
         </div>
+
+        {/* Unified invoice download */}
+        {!loading && !violationsLoading && totalPendingItems >= 2 && (
+          <Button size="sm" variant="outline" className="gap-1.5 border-primary/30 text-primary hover:bg-primary/10" onClick={handleDownloadUnifiedPDF}>
+            <FileDown className="h-4 w-4" />
+            Baixar Fatura Unificada ({totalPendingItems} pendências · R$ {(pendingInvoices.reduce((s, i) => s + i.total_amount, 0) + pendingViolations.reduce((s, v) => s + v.amount, 0)).toFixed(2)})
+          </Button>
+        )}
 
         {/* Add violation button (admin) */}
         {isAdmin && showViolations && (
