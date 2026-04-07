@@ -92,6 +92,20 @@ Deno.serve(async (req) => {
       return jsonResponse({ message: "Senha atualizada com sucesso" });
     }
 
+    if (action === "update_email") {
+      const { userId, newEmail } = body;
+      if (!userId || !newEmail) {
+        return jsonResponse({ error: "userId e newEmail são obrigatórios" }, 400);
+      }
+
+      const { error } = await adminClient.auth.admin.updateUser(userId, {
+        email: newEmail,
+      });
+      if (error) throw error;
+
+      return jsonResponse({ message: "E-mail atualizado com sucesso" });
+    }
+
     return jsonResponse({ error: "Ação inválida" }, 400);
   } catch (err: any) {
     console.error("manage-users error:", err.message);
