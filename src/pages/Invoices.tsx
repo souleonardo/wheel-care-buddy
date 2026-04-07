@@ -92,17 +92,14 @@ function getNextDates(startDate: string, frequency: string, upToDate: Date): str
   return dates;
 }
 
-type TabKey = "invoices" | "violations";
-
 export default function Invoices() {
   const { role } = useAuth();
-  const [activeTab, setActiveTab] = useState<TabKey>("invoices");
   const [allInvoices, setAllInvoices] = useState<UnifiedInvoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [confirmPayId, setConfirmPayId] = useState<string | null>(null);
   const [confirmPayType, setConfirmPayType] = useState<"invoice" | "violation">("invoice");
-  const [filter, setFilter] = useState<"all" | "rental" | "maintenance">("all");
+  const [filter, setFilter] = useState<"all" | "rental" | "maintenance" | "violation">("all");
   const isAdmin = role === "admin";
 
   // Violations state
