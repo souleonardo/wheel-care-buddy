@@ -1,6 +1,7 @@
 import { useFleet } from "@/context/FleetContext";
 import { useEffect, useState, useCallback } from "react";
 import { Clock, CheckCircle2, Wrench, CalendarDays, Car, Package, FileText, Droplets, AlertTriangle, Trash2 } from "lucide-react";
+import { DaySchedulePopover } from "@/components/DaySchedulePopover";
 import { MobileLayout } from "@/components/MobileLayout";
 import { AddSupplyUsageDialog } from "@/components/AddSupplyUsageDialog";
 import { OilChangeMileageDialog } from "@/components/OilChangeMileageDialog";
@@ -418,6 +419,7 @@ export default function Workshop() {
                         <div className="flex flex-wrap gap-2 mt-3">
                           {rev.status === "pending_approval" && (
                             <>
+                              <DaySchedulePopover date={rev.scheduledDate} highlightTime={rev.scheduledTime} />
                               <button
                                 onClick={() => updateRevisionStatus(rev.id, "scheduled")}
                                 className="text-[11px] font-medium px-3 py-1.5 rounded-lg bg-success/15 text-success hover:bg-success/25 transition-colors"
