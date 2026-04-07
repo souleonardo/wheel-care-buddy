@@ -53,9 +53,17 @@ export default function Workshop() {
     }
   }, [revisions]);
 
+  const fetchBillableTypes = useCallback(async () => {
+    const { data } = await supabase
+      .from("billable_service_types")
+      .select("service_type");
+    if (data) setBillableTypes(new Set(data.map((d: any) => d.service_type)));
+  }, []);
+
   useEffect(() => {
     fetchUsage();
-  }, [fetchUsage]);
+    fetchBillableTypes();
+  }, [fetchUsage, fetchBillableTypes]);
 
   const renderUsageList = (revisionId: string) => {
     const items = usageMap[revisionId];
@@ -158,7 +166,7 @@ export default function Workshop() {
 
                                 // Calculate cost & generate maintenance payment if billable
                                 const usageItems = usageMap[rev.id] || [];
-                                if (isServiceBillable(rev.type) && usageItems.length > 0) {
+                                if (billableTypes.has(rev.type) && usageItems.length > 0) {
                                   const totalCost = usageItems.reduce((sum, u) => {
                                     const cost = u.supply?.unit_cost ?? 0;
                                     return sum + u.quantity_used * cost;
