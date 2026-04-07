@@ -540,10 +540,6 @@ export default function Invoices() {
             Baixar Fatura Unificada ({totalPendingItems} pendências · R$ {(pendingInvoices.reduce((s, i) => s + i.total_amount, 0) + pendingViolations.reduce((s, v) => s + v.amount, 0)).toFixed(2)})
           </Button>
         )}
-              {label}
-            </button>
-          ))}
-        </div>
 
         {/* Add violation button (admin) */}
         {isAdmin && showViolations && (
