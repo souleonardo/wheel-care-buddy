@@ -526,7 +526,12 @@ export default function Invoices() {
                 filter === key
                   ? "bg-primary text-primary-foreground"
                   : "bg-muted text-muted-foreground hover:bg-muted/80"
-        )}
+              )}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
 
         {/* Unified invoice download */}
         {!loading && !violationsLoading && totalPendingItems >= 2 && (
@@ -535,7 +540,6 @@ export default function Invoices() {
             Baixar Fatura Unificada ({totalPendingItems} pendências · R$ {(pendingInvoices.reduce((s, i) => s + i.total_amount, 0) + pendingViolations.reduce((s, v) => s + v.amount, 0)).toFixed(2)})
           </Button>
         )}
-            >
               {label}
             </button>
           ))}
