@@ -410,6 +410,7 @@ export type Database = {
           auto_number: string | null
           created_at: string
           description: string
+          document_url: string | null
           due_date: string
           id: string
           paid_date: string | null
@@ -425,6 +426,7 @@ export type Database = {
           auto_number?: string | null
           created_at?: string
           description: string
+          document_url?: string | null
           due_date: string
           id?: string
           paid_date?: string | null
@@ -440,6 +442,7 @@ export type Database = {
           auto_number?: string | null
           created_at?: string
           description?: string
+          document_url?: string | null
           due_date?: string
           id?: string
           paid_date?: string | null
