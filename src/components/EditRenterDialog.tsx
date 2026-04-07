@@ -197,7 +197,7 @@ export function EditRenterDialog({ vehicle }: EditRenterDialogProps) {
               </PopoverContent>
             </Popover>
           </div>
-
+          <div className="space-y-1.5">
             <Label>Contrato de Locação</Label>
             <input
               ref={fileRef}
