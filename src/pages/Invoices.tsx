@@ -462,411 +462,221 @@ export default function Invoices() {
   return (
     <MobileLayout title="Faturas">
       <div className="p-4 space-y-4">
-        {/* Tabs */}
-        <div className="flex gap-2 border-b border-border/50 pb-2">
+        {/* Summary cards */}
+        <div className="flex gap-2">
+          {[
+            { key: "pending", label: "Pendentes" },
+            { key: "paid", label: "Pagas" },
+            { key: "overdue", label: "Atrasadas" },
+          ].map(({ key, label }) => {
+            const invCount = filteredInvoices.filter((i) => i.status === key).length;
+            const violCount = showViolations ? violations.filter((v) => v.status === key).length : 0;
+            const count = (showInvoices ? invCount : 0) + violCount;
+            const conf = statusConfig[key];
+            return (
+              <div key={key} className={cn("flex-1 rounded-lg px-3 py-2 text-center", conf.colorClass)}>
+                <p className="text-lg font-bold">{count}</p>
+                <p className="text-[10px] font-medium">{label}</p>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Type filter: Todas | Aluguel | Manutenção | Infrações de Trânsito */}
+        <div className="flex gap-2 flex-wrap">
           {([
-            { key: "invoices" as TabKey, label: "Faturas", icon: Receipt },
-            { key: "violations" as TabKey, label: "Infrações de Trânsito", icon: ShieldAlert },
-          ]).map(({ key, label, icon: Icon }) => (
+            { key: "all", label: "Todas" },
+            { key: "rental", label: "Aluguel" },
+            { key: "maintenance", label: "Manutenção" },
+            { key: "violation", label: "Infrações de Trânsito" },
+          ] as const).map(({ key, label }) => (
             <button
               key={key}
-              onClick={() => setActiveTab(key)}
+              onClick={() => setFilter(key)}
               className={cn(
-                "flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-lg transition-colors",
-                activeTab === key
+                "text-xs font-medium px-3 py-1.5 rounded-lg transition-colors",
+                filter === key
                   ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-muted/80"
+                  : "bg-muted text-muted-foreground hover:bg-muted/80"
               )}
             >
-              <Icon className="h-3.5 w-3.5" />
               {label}
             </button>
           ))}
         </div>
 
-        {activeTab === "invoices" && (
-          <>
-            {/* Summary cards */}
-            <div className="flex gap-2">
-              {[
-                { key: "pending", label: "Pendentes" },
-                { key: "paid", label: "Pagas" },
-                { key: "overdue", label: "Atrasadas" },
-              ].map(({ key, label }) => {
-                const count = filteredInvoices.filter((i) => i.status === key).length;
-                const conf = statusConfig[key];
-                return (
-                  <div key={key} className={cn("flex-1 rounded-lg px-3 py-2 text-center", conf.colorClass)}>
-                    <p className="text-lg font-bold">{count}</p>
-                    <p className="text-[10px] font-medium">{label}</p>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Type filter */}
-            <div className="flex gap-2">
-              {([
-                { key: "all", label: "Todas" },
-                { key: "rental", label: "Aluguel" },
-                { key: "maintenance", label: "Manutenção" },
-              ] as const).map(({ key, label }) => (
-                <button
-                  key={key}
-                  onClick={() => setFilter(key)}
-                  className={cn(
-                    "text-xs font-medium px-3 py-1.5 rounded-lg transition-colors",
-                    filter === key
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted text-muted-foreground hover:bg-muted/80"
-                  )}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-
-            {loading ? (
-              <div className="text-center py-12 text-muted-foreground text-sm">Carregando faturas...</div>
-            ) : filteredInvoices.length === 0 ? (
-              <div className="text-center py-12">
-                <Receipt className="h-10 w-10 mx-auto text-muted-foreground/30 mb-3" />
-                <p className="text-sm text-muted-foreground">Nenhuma fatura encontrada</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {filteredInvoices.map((inv) => {
-                  const conf = statusConfig[inv.status] ?? statusConfig.pending;
-                  const isExpanded = expandedId === inv.id;
-                  const billableTotal = inv.items
-                    .filter((i) => i.is_billable)
-                    .reduce((s, i) => s + i.quantity * i.unit_cost, 0);
-                  const laborTotal = inv.laborCharges.reduce((s, l) => s + l.amount, 0);
-                  const isRental = inv.type === "rental";
-
-                  return (
-                    <div key={inv.id} className="bg-card rounded-xl border border-border/50 overflow-hidden">
-                      <button
-                        onClick={() => setExpandedId(isExpanded ? null : inv.id)}
-                        className="w-full p-4 text-left"
-                      >
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <div className="flex items-center gap-2">
-                              {isRental && <Car className="h-3.5 w-3.5 text-primary shrink-0" />}
-                              <h3 className="text-sm font-semibold text-foreground">
-                                {isRental
-                                  ? `Aluguel ${inv.frequency_label ?? ""}`
-                                  : `${inv.vehicle_model} — ${inv.revision_type}`}
-                              </h3>
-                            </div>
-                            <p className="text-xs text-muted-foreground mt-0.5">
-                              {isRental
-                                ? `${inv.vehicle_model} · ${inv.vehicle_plate} · ${inv.renter_name}`
-                                : `${inv.vehicle_plate} · ${inv.renter_name} · ${formatDate(inv.created_at)}`}
-                            </p>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className={cn("text-[10px] font-medium px-2 py-0.5 rounded-full flex items-center gap-1", conf.colorClass)}>
-                              <conf.icon className="h-3 w-3" />
-                              {conf.label}
-                            </span>
-                            {isExpanded ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
-                          <span className="font-semibold text-foreground">
-                            R$ {inv.total_amount.toFixed(2)}
-                          </span>
-                          {inv.status !== "informational" && (
-                            <span>Venc.: {formatDate(inv.due_date)}</span>
-                          )}
-                          {isRental && (
-                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary font-medium">
-                              Aluguel
-                            </span>
-                          )}
-                        </div>
-                      </button>
-
-                      {isExpanded && (
-                        <div className="border-t border-border/30 px-4 py-3 space-y-3">
-                          {isRental ? (
-                            <div className="space-y-2">
-                              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Detalhes do aluguel</p>
-                              <div className="text-xs space-y-1">
-                                <div className="flex justify-between">
-                                  <span className="text-muted-foreground">Veículo</span>
-                                  <span className="text-foreground font-medium">{inv.vehicle_model} ({inv.vehicle_plate})</span>
-                                </div>
-                                <div className="flex justify-between">
-                                  <span className="text-muted-foreground">Locatário</span>
-                                  <span className="text-foreground font-medium">{inv.renter_name}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                  <span className="text-muted-foreground">Periodicidade</span>
-                                  <span className="text-foreground font-medium">{inv.frequency_label}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                  <span className="text-muted-foreground">Vencimento</span>
-                                  <span className="text-foreground font-medium">{formatDate(inv.due_date)}</span>
-                                </div>
-                              </div>
-                              <div className="flex justify-between pt-2 border-t border-border/20 text-xs font-semibold">
-                                <span>Valor</span>
-                                <span>R$ {inv.total_amount.toFixed(2)}</span>
-                              </div>
-                            </div>
-                          ) : (
-                            <>
-                              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Itens da manutenção</p>
-                              <div className="space-y-1.5">
-                                {inv.items.map((item) => (
-                                  <div key={item.id} className="flex items-center justify-between text-xs">
-                                    <div className="flex items-center gap-2">
-                                      <span className="text-foreground">{item.supply_name}</span>
-                                      <span className="text-muted-foreground">{item.quantity} {item.unit}</span>
-                                    </div>
-                                    <div>
-                                      {item.is_billable ? (
-                                        <span className="font-medium text-foreground">R$ {(item.quantity * item.unit_cost).toFixed(2)}</span>
-                                      ) : (
-                                        <span className="text-[10px] text-muted-foreground italic">incluso</span>
-                                      )}
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-
-                              {inv.laborCharges.length > 0 && (
-                                <div className="space-y-1">
-                                  <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Mão de obra</p>
-                                  {inv.laborCharges.map((lc, idx) => (
-                                    <div key={idx} className="flex items-center justify-between text-xs">
-                                      <span className="text-foreground">{lc.description}</span>
-                                      <span className="font-medium text-foreground">R$ {lc.amount.toFixed(2)}</span>
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
-
-                              {(billableTotal > 0 || laborTotal > 0) && (
-                                <div className="flex justify-between pt-2 border-t border-border/20 text-xs font-semibold">
-                                  <span>Total cobrável</span>
-                                  <span>R$ {(billableTotal + laborTotal).toFixed(2)}</span>
-                                </div>
-                              )}
-                            </>
-                          )}
-
-                          <button
-                            onClick={() => handleDownloadPDF(inv)}
-                            className="w-full flex items-center justify-center gap-2 mt-2 py-2 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors text-xs font-medium"
-                          >
-                            <FileDown className="h-4 w-4" />
-                            Baixar Fatura em PDF
-                          </button>
-
-                          {isAdmin && inv.status !== "paid" && inv.status !== "informational" && (
-                            <button
-                              onClick={() => { setConfirmPayId(inv.id); setConfirmPayType("invoice"); }}
-                              className="w-full flex items-center justify-center gap-2 py-2 rounded-lg bg-success/10 text-success hover:bg-success/20 transition-colors text-xs font-medium"
-                            >
-                              <CheckCircle2 className="h-4 w-4" />
-                              Marcar como Paga
-                            </button>
-                          )}
-
-                          {inv.status === "paid" && (
-                            <div className="flex items-center justify-center gap-2 py-2 rounded-lg bg-success/10 text-success text-xs font-medium">
-                              <CheckCircle2 className="h-4 w-4" />
-                              Fatura paga
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </>
+        {/* Add violation button (admin) */}
+        {isAdmin && showViolations && (
+          <Button size="sm" variant="outline" className="gap-1.5" onClick={() => { setAddViolationOpen(true); fetchVehicleOptions(); }}>
+            <Plus className="h-4 w-4" />
+            Registrar Infração
+          </Button>
         )}
 
-        {/* ======== VIOLATIONS TAB ======== */}
-        {activeTab === "violations" && (
-          <>
-            {/* Summary */}
-            <div className="flex gap-2">
-              {[
-                { key: "pending", label: "Pendentes" },
-                { key: "paid", label: "Pagas" },
-                { key: "overdue", label: "Atrasadas" },
-              ].map(({ key, label }) => {
-                const count = violations.filter((v) => v.status === key).length;
-                const conf = statusConfig[key];
-                return (
-                  <div key={key} className={cn("flex-1 rounded-lg px-3 py-2 text-center", conf.colorClass)}>
-                    <p className="text-lg font-bold">{count}</p>
-                    <p className="text-[10px] font-medium">{label}</p>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Add button (admin) */}
-            {isAdmin && (
-              <Button
-                size="sm"
-                className="gap-1.5"
-                onClick={() => { setAddViolationOpen(true); fetchVehicleOptions(); }}
-              >
-                <Plus className="h-4 w-4" />
-                Registrar Infração
-              </Button>
-            )}
-
-            {violationsLoading ? (
-              <div className="text-center py-12 text-muted-foreground text-sm">Carregando infrações...</div>
-            ) : violations.length === 0 ? (
-              <div className="text-center py-12">
-                <ShieldAlert className="h-10 w-10 mx-auto text-muted-foreground/30 mb-3" />
-                <p className="text-sm text-muted-foreground">Nenhuma infração registrada</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {violations.map((v) => {
-                  const conf = statusConfig[v.status] ?? statusConfig.pending;
-                  const isExpanded = expandedId === v.id;
-
-                  return (
-                    <div key={v.id} className="bg-card rounded-xl border border-border/50 overflow-hidden">
-                      <button
-                        onClick={() => setExpandedId(isExpanded ? null : v.id)}
-                        className="w-full p-4 text-left"
-                      >
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <ShieldAlert className="h-3.5 w-3.5 text-destructive shrink-0" />
-                              <h3 className="text-sm font-semibold text-foreground">{v.description}</h3>
-                            </div>
-                            <p className="text-xs text-muted-foreground mt-0.5">
-                              {v.vehicle_model} · {v.vehicle_plate} · {v.renter_name}
-                            </p>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className={cn("text-[10px] font-medium px-2 py-0.5 rounded-full flex items-center gap-1", conf.colorClass)}>
-                              <conf.icon className="h-3 w-3" />
-                              {conf.label}
-                            </span>
-                            {isExpanded ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
-                          </div>
+        {loading || violationsLoading ? (
+          <div className="text-center py-12 text-muted-foreground text-sm">Carregando...</div>
+        ) : (
+          <div className="space-y-3">
+            {/* INVOICES (rental + maintenance) */}
+            {showInvoices && filteredInvoices.map((inv) => {
+              const conf = statusConfig[inv.status] ?? statusConfig.pending;
+              const isExpanded = expandedId === inv.id;
+              const billableTotal = inv.items.filter((i) => i.is_billable).reduce((s, i) => s + i.quantity * i.unit_cost, 0);
+              const laborTotal = inv.laborCharges.reduce((s, l) => s + l.amount, 0);
+              const isRental = inv.type === "rental";
+              return (
+                <div key={inv.id} className="bg-card rounded-xl border border-border/50 overflow-hidden">
+                  <button onClick={() => setExpandedId(isExpanded ? null : inv.id)} className="w-full p-4 text-left">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          {isRental && <Car className="h-3.5 w-3.5 text-primary shrink-0" />}
+                          <h3 className="text-sm font-semibold text-foreground">
+                            {isRental ? `Aluguel ${inv.frequency_label ?? ""}` : `${inv.vehicle_model} — ${inv.revision_type}`}
+                          </h3>
                         </div>
-                        <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
-                          <span className="font-semibold text-foreground">R$ {v.amount.toFixed(2)}</span>
-                          <span>Infração: {formatDate(v.violation_date)}</span>
-                          <span>Venc.: {formatDate(v.due_date)}</span>
-                        </div>
-                      </button>
-
-                      {isExpanded && (
-                        <div className="border-t border-border/30 px-4 py-3 space-y-3">
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {isRental ? `${inv.vehicle_model} · ${inv.vehicle_plate} · ${inv.renter_name}` : `${inv.vehicle_plate} · ${inv.renter_name} · ${formatDate(inv.created_at)}`}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className={cn("text-[10px] font-medium px-2 py-0.5 rounded-full flex items-center gap-1", conf.colorClass)}>
+                          <conf.icon className="h-3 w-3" />{conf.label}
+                        </span>
+                        {isExpanded ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
+                      <span className="font-semibold text-foreground">R$ {inv.total_amount.toFixed(2)}</span>
+                      {inv.status !== "informational" && <span>Venc.: {formatDate(inv.due_date)}</span>}
+                      {isRental && <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary font-medium">Aluguel</span>}
+                    </div>
+                  </button>
+                  {isExpanded && (
+                    <div className="border-t border-border/30 px-4 py-3 space-y-3">
+                      {isRental ? (
+                        <div className="space-y-2">
+                          <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Detalhes do aluguel</p>
                           <div className="text-xs space-y-1">
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">Veículo</span>
-                              <span className="text-foreground font-medium">{v.vehicle_model} ({v.vehicle_plate})</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">Locatário</span>
-                              <span className="text-foreground font-medium">{v.renter_name}</span>
-                            </div>
-                            {v.auto_number && (
-                              <div className="flex justify-between">
-                                <span className="text-muted-foreground">Nº do Auto</span>
-                                <span className="text-foreground font-medium">{v.auto_number}</span>
-                              </div>
-                            )}
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">Data da Infração</span>
-                              <span className="text-foreground font-medium">{formatDate(v.violation_date)}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">Vencimento</span>
-                              <span className="text-foreground font-medium">{formatDate(v.due_date)}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">Origem</span>
-                              <span className="text-foreground font-medium">{v.source === "manual" ? "Lançamento manual" : v.source}</span>
-                            </div>
+                            <div className="flex justify-between"><span className="text-muted-foreground">Veículo</span><span className="text-foreground font-medium">{inv.vehicle_model} ({inv.vehicle_plate})</span></div>
+                            <div className="flex justify-between"><span className="text-muted-foreground">Locatário</span><span className="text-foreground font-medium">{inv.renter_name}</span></div>
+                            <div className="flex justify-between"><span className="text-muted-foreground">Periodicidade</span><span className="text-foreground font-medium">{inv.frequency_label}</span></div>
+                            <div className="flex justify-between"><span className="text-muted-foreground">Vencimento</span><span className="text-foreground font-medium">{formatDate(inv.due_date)}</span></div>
                           </div>
-                          <div className="flex justify-between pt-2 border-t border-border/20 text-xs font-semibold">
-                            <span>Valor da multa</span>
-                            <span>R$ {v.amount.toFixed(2)}</span>
-                          </div>
-
-                          {/* Document upload (admin) / download (all) */}
-                          {v.document_url ? (
-                            <button
-                              onClick={async () => {
-                                const { data } = await supabase.storage.from("violation-documents").createSignedUrl(v.document_url!, 300);
-                                if (data?.signedUrl) window.open(data.signedUrl, "_blank");
-                                else toast.error("Erro ao gerar link de download");
-                              }}
-                              className="w-full flex items-center justify-center gap-2 py-2 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors text-xs font-medium"
-                            >
-                              <FileDown className="h-4 w-4" />
-                              Baixar Documento da Infração
-                            </button>
-                          ) : isAdmin ? (
-                            <label className="w-full flex items-center justify-center gap-2 py-2 rounded-lg bg-muted text-muted-foreground hover:bg-muted/80 transition-colors text-xs font-medium cursor-pointer">
-                              <Upload className="h-4 w-4" />
-                              Anexar Documento
-                              <input
-                                type="file"
-                                accept=".pdf,.jpg,.jpeg,.png"
-                                className="hidden"
-                                onChange={async (e) => {
-                                  const file = e.target.files?.[0];
-                                  if (!file) return;
-                                  const ext = file.name.split(".").pop();
-                                  const path = `${v.renter_id}/${v.id}.${ext}`;
-                                  const { error: upErr } = await supabase.storage.from("violation-documents").upload(path, file, { upsert: true });
-                                  if (upErr) { toast.error("Erro no upload: " + upErr.message); return; }
-                                  await supabase.from("traffic_violations").update({ document_url: path } as any).eq("id", v.id);
-                                  toast.success("Documento anexado");
-                                  fetchViolations();
-                                }}
-                              />
-                            </label>
-                          ) : (
-                            <p className="text-[10px] text-muted-foreground text-center italic">Nenhum documento anexado</p>
-                          )}
-
-                          {isAdmin && v.status !== "paid" && (
-                            <button
-                              onClick={() => { setConfirmPayId(v.id); setConfirmPayType("violation"); }}
-                              className="w-full flex items-center justify-center gap-2 py-2 rounded-lg bg-success/10 text-success hover:bg-success/20 transition-colors text-xs font-medium"
-                            >
-                              <CheckCircle2 className="h-4 w-4" />
-                              Marcar como Paga
-                            </button>
-                          )}
-
-                          {v.status === "paid" && (
-                            <div className="flex items-center justify-center gap-2 py-2 rounded-lg bg-success/10 text-success text-xs font-medium">
-                              <CheckCircle2 className="h-4 w-4" />
-                              Infração paga {v.paid_date ? `em ${formatDate(v.paid_date)}` : ""}
-                            </div>
-                          )}
+                          <div className="flex justify-between pt-2 border-t border-border/20 text-xs font-semibold"><span>Valor</span><span>R$ {inv.total_amount.toFixed(2)}</span></div>
                         </div>
+                      ) : (
+                        <>
+                          <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Itens da manutenção</p>
+                          <div className="space-y-1.5">
+                            {inv.items.map((item) => (
+                              <div key={item.id} className="flex items-center justify-between text-xs">
+                                <div className="flex items-center gap-2"><span className="text-foreground">{item.supply_name}</span><span className="text-muted-foreground">{item.quantity} {item.unit}</span></div>
+                                <div>{item.is_billable ? <span className="font-medium text-foreground">R$ {(item.quantity * item.unit_cost).toFixed(2)}</span> : <span className="text-[10px] text-muted-foreground italic">incluso</span>}</div>
+                              </div>
+                            ))}
+                          </div>
+                          {inv.laborCharges.length > 0 && (
+                            <div className="space-y-1">
+                              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Mão de obra</p>
+                              {inv.laborCharges.map((lc, idx) => (
+                                <div key={idx} className="flex items-center justify-between text-xs"><span className="text-foreground">{lc.description}</span><span className="font-medium text-foreground">R$ {lc.amount.toFixed(2)}</span></div>
+                              ))}
+                            </div>
+                          )}
+                          {(billableTotal > 0 || laborTotal > 0) && (
+                            <div className="flex justify-between pt-2 border-t border-border/20 text-xs font-semibold"><span>Total cobrável</span><span>R$ {(billableTotal + laborTotal).toFixed(2)}</span></div>
+                          )}
+                        </>
+                      )}
+                      <button onClick={() => handleDownloadPDF(inv)} className="w-full flex items-center justify-center gap-2 mt-2 py-2 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors text-xs font-medium"><FileDown className="h-4 w-4" />Baixar Fatura em PDF</button>
+                      {isAdmin && inv.status !== "paid" && inv.status !== "informational" && (
+                        <button onClick={() => { setConfirmPayId(inv.id); setConfirmPayType("invoice"); }} className="w-full flex items-center justify-center gap-2 py-2 rounded-lg bg-success/10 text-success hover:bg-success/20 transition-colors text-xs font-medium"><CheckCircle2 className="h-4 w-4" />Marcar como Paga</button>
+                      )}
+                      {inv.status === "paid" && (
+                        <div className="flex items-center justify-center gap-2 py-2 rounded-lg bg-success/10 text-success text-xs font-medium"><CheckCircle2 className="h-4 w-4" />Fatura paga</div>
                       )}
                     </div>
-                  );
-                })}
-              </div>
+                  )}
+                </div>
+              );
+            })}
+
+            {/* VIOLATIONS */}
+            {showViolations && violations.map((v) => {
+              const conf = statusConfig[v.status] ?? statusConfig.pending;
+              const isExpanded = expandedId === v.id;
+              return (
+                <div key={v.id} className="bg-card rounded-xl border border-border/50 overflow-hidden">
+                  <button onClick={() => setExpandedId(isExpanded ? null : v.id)} className="w-full p-4 text-left">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <ShieldAlert className="h-3.5 w-3.5 text-destructive shrink-0" />
+                          <h3 className="text-sm font-semibold text-foreground">{v.description}</h3>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-0.5">{v.vehicle_model} · {v.vehicle_plate} · {v.renter_name}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className={cn("text-[10px] font-medium px-2 py-0.5 rounded-full flex items-center gap-1", conf.colorClass)}>
+                          <conf.icon className="h-3 w-3" />{conf.label}
+                        </span>
+                        {isExpanded ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
+                      <span className="font-semibold text-foreground">R$ {v.amount.toFixed(2)}</span>
+                      <span>Infração: {formatDate(v.violation_date)}</span>
+                      <span>Venc.: {formatDate(v.due_date)}</span>
+                    </div>
+                  </button>
+                  {isExpanded && (
+                    <div className="border-t border-border/30 px-4 py-3 space-y-3">
+                      <div className="text-xs space-y-1">
+                        <div className="flex justify-between"><span className="text-muted-foreground">Veículo</span><span className="text-foreground font-medium">{v.vehicle_model} ({v.vehicle_plate})</span></div>
+                        <div className="flex justify-between"><span className="text-muted-foreground">Locatário</span><span className="text-foreground font-medium">{v.renter_name}</span></div>
+                        {v.auto_number && <div className="flex justify-between"><span className="text-muted-foreground">Nº do Auto</span><span className="text-foreground font-medium">{v.auto_number}</span></div>}
+                        <div className="flex justify-between"><span className="text-muted-foreground">Data da Infração</span><span className="text-foreground font-medium">{formatDate(v.violation_date)}</span></div>
+                        <div className="flex justify-between"><span className="text-muted-foreground">Vencimento</span><span className="text-foreground font-medium">{formatDate(v.due_date)}</span></div>
+                        <div className="flex justify-between"><span className="text-muted-foreground">Origem</span><span className="text-foreground font-medium">{v.source === "manual" ? "Lançamento manual" : v.source}</span></div>
+                      </div>
+                      <div className="flex justify-between pt-2 border-t border-border/20 text-xs font-semibold"><span>Valor da multa</span><span>R$ {v.amount.toFixed(2)}</span></div>
+                      {v.document_url ? (
+                        <button onClick={async () => { const { data } = await supabase.storage.from("violation-documents").createSignedUrl(v.document_url!, 300); if (data?.signedUrl) window.open(data.signedUrl, "_blank"); else toast.error("Erro ao gerar link de download"); }} className="w-full flex items-center justify-center gap-2 py-2 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors text-xs font-medium"><FileDown className="h-4 w-4" />Baixar Documento da Infração</button>
+                      ) : isAdmin ? (
+                        <label className="w-full flex items-center justify-center gap-2 py-2 rounded-lg bg-muted text-muted-foreground hover:bg-muted/80 transition-colors text-xs font-medium cursor-pointer">
+                          <Upload className="h-4 w-4" />Anexar Documento
+                          <input type="file" accept=".pdf,.jpg,.jpeg,.png" className="hidden" onChange={async (e) => {
+                            const file = e.target.files?.[0]; if (!file) return;
+                            const ext = file.name.split(".").pop();
+                            const path = `${v.renter_id}/${v.id}.${ext}`;
+                            const { error: upErr } = await supabase.storage.from("violation-documents").upload(path, file, { upsert: true });
+                            if (upErr) { toast.error("Erro no upload: " + upErr.message); return; }
+                            await supabase.from("traffic_violations").update({ document_url: path } as any).eq("id", v.id);
+                            toast.success("Documento anexado"); fetchViolations();
+                          }} />
+                        </label>
+                      ) : <p className="text-[10px] text-muted-foreground text-center italic">Nenhum documento anexado</p>}
+                      {isAdmin && v.status !== "paid" && (
+                        <button onClick={() => { setConfirmPayId(v.id); setConfirmPayType("violation"); }} className="w-full flex items-center justify-center gap-2 py-2 rounded-lg bg-success/10 text-success hover:bg-success/20 transition-colors text-xs font-medium"><CheckCircle2 className="h-4 w-4" />Marcar como Paga</button>
+                      )}
+                      {v.status === "paid" && (
+                        <div className="flex items-center justify-center gap-2 py-2 rounded-lg bg-success/10 text-success text-xs font-medium"><CheckCircle2 className="h-4 w-4" />Infração paga {v.paid_date ? `em ${formatDate(v.paid_date)}` : ""}</div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+
+            {/* Empty */}
+            {(showInvoices && filteredInvoices.length === 0) && (!showViolations || violations.length === 0) && (
+              <div className="text-center py-12"><Receipt className="h-10 w-10 mx-auto text-muted-foreground/30 mb-3" /><p className="text-sm text-muted-foreground">Nenhum registro encontrado</p></div>
             )}
-          </>
+            {filter === "violation" && violations.length === 0 && (
+              <div className="text-center py-12"><ShieldAlert className="h-10 w-10 mx-auto text-muted-foreground/30 mb-3" /><p className="text-sm text-muted-foreground">Nenhuma infração registrada</p></div>
+            )}
+          </div>
         )}
       </div>
 
