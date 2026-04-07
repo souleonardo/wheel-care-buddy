@@ -25,8 +25,8 @@ const statusConfig = {
 
 export default function Workshop() {
   const { revisions, updateRevisionStatus } = useFleet();
-  const { userRole } = useAuth();
-  const isAdmin = userRole === "admin";
+  const { role } = useAuth();
+  const isAdmin = role === "admin";
   const activeRevisions = revisions.filter((r) => r.status !== "completed");
   const completedRevisions = revisions.filter((r) => r.status === "completed");
 
