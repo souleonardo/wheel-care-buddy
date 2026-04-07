@@ -472,6 +472,22 @@ export default function Workshop() {
 
                       {/* Action Buttons */}
                       <div className="flex flex-wrap gap-2 mt-3">
+                        {rev.status === "pending_approval" && (
+                          <>
+                            <button
+                              onClick={() => updateRevisionStatus(rev.id, "scheduled")}
+                              className="text-[11px] font-medium px-3 py-1.5 rounded-lg bg-success/15 text-success hover:bg-success/25 transition-colors"
+                            >
+                              ✅ Aprovar
+                            </button>
+                            <button
+                              onClick={() => updateRevisionStatus(rev.id, "rejected")}
+                              className="text-[11px] font-medium px-3 py-1.5 rounded-lg bg-destructive/15 text-destructive hover:bg-destructive/25 transition-colors"
+                            >
+                              ❌ Rejeitar
+                            </button>
+                          </>
+                        )}
                         {rev.status === "scheduled" && (
                           <button
                             onClick={() => updateRevisionStatus(rev.id, "in_progress")}
