@@ -233,7 +233,13 @@ export default function Workshop() {
   const finalizeCompletion = async (rev: typeof revisions[0]) => {
     updateRevisionStatus(rev.id, "completed");
 
-    const usageItems = usageMap[rev.id] || [];
+    // Fetch fresh usage data from DB to avoid stale state
+    const { data: freshUsage } = await supabase
+      .from("supply_usage")
+      .select("id, revision_id, quantity_used, supply:supplies(name, unit, unit_cost, is_billable, is_labor_billable)")
+      .eq("revision_id", rev.id);
+
+    const usageItems: UsageRecord[] = (freshUsage as any[]) ?? [];
 
     // Get active renter for this vehicle
     const { data: assignment } = await supabase
