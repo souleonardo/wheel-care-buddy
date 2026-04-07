@@ -87,6 +87,20 @@ export function LaborChargeDialog({ open, onOpenChange, revisionLabel, onConfirm
           </div>
         </form>
       </DialogContent>
+      <AlertDialog open={confirmSkip} onOpenChange={setConfirmSkip}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Finalizar sem mão de obra?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Deseja realmente finalizar este serviço sem lançar a mão de obra?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Não</AlertDialogCancel>
+            <AlertDialogAction onClick={handleSkip}>Sim</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 }
