@@ -118,6 +118,7 @@ export default function Invoices() {
     due_date: "",
     auto_number: "",
   });
+  const [violationFile, setViolationFile] = useState<File | null>(null);
   const [vehicleOptions, setVehicleOptions] = useState<{ id: string; plate: string; model: string; renter_id: string; renter_name: string }[]>([]);
 
   // ---- INVOICES FETCH ----
