@@ -34,7 +34,7 @@ const statusConfig: Record<string, { label: string; icon: typeof CalendarDays; c
   scheduled: { label: "Agendada", icon: CalendarDays, class: "bg-info/15 text-info", iconClass: "text-info" },
   in_progress: { label: "Em andamento", icon: Clock, class: "bg-warning/15 text-warning", iconClass: "text-warning" },
   completed: { label: "Concluída", icon: CheckCircle2, class: "bg-success/15 text-success", iconClass: "text-success" },
-};
+  rejected: { label: "Rejeitada", icon: AlertTriangle, class: "bg-destructive/15 text-destructive", iconClass: "text-destructive" },
 
 const fallbackStatusConfig = { label: "Desconhecido", icon: CalendarDays, class: "bg-muted text-muted-foreground", iconClass: "text-muted-foreground" };
 
