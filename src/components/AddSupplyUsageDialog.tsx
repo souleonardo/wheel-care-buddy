@@ -14,6 +14,7 @@ interface Supply {
   name: string;
   quantity: number;
   unit: string;
+  unit_cost: number;
 }
 
 interface UsageItem {
