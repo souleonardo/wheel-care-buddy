@@ -404,50 +404,106 @@ export type Database = {
           },
         ]
       }
+      vehicle_debts: {
+        Row: {
+          amount: number
+          created_at: string
+          description: string
+          due_date: string | null
+          external_ref: string | null
+          id: string
+          source: string
+          status: string
+          updated_at: string
+          vehicle_id: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          description: string
+          due_date?: string | null
+          external_ref?: string | null
+          id?: string
+          source?: string
+          status?: string
+          updated_at?: string
+          vehicle_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          description?: string
+          due_date?: string | null
+          external_ref?: string | null
+          id?: string
+          source?: string
+          status?: string
+          updated_at?: string
+          vehicle_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicle_debts_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vehicles: {
         Row: {
+          chassis: string | null
           created_at: string
           crlv_expiry_date: string | null
           crlv_url: string | null
           current_mileage: number | null
+          entry_date: string | null
           id: string
           last_oil_change_date: string | null
           model: string
           next_oil_change_km: number | null
           next_revision: string | null
           plate: string
+          renavam: string | null
           status: string
           updated_at: string
           weekly_rate: number
           year: number
         }
         Insert: {
+          chassis?: string | null
           created_at?: string
           crlv_expiry_date?: string | null
           crlv_url?: string | null
           current_mileage?: number | null
+          entry_date?: string | null
           id?: string
           last_oil_change_date?: string | null
           model: string
           next_oil_change_km?: number | null
           next_revision?: string | null
           plate: string
+          renavam?: string | null
           status?: string
           updated_at?: string
           weekly_rate: number
           year: number
         }
         Update: {
+          chassis?: string | null
           created_at?: string
           crlv_expiry_date?: string | null
           crlv_url?: string | null
           current_mileage?: number | null
+          entry_date?: string | null
           id?: string
           last_oil_change_date?: string | null
           model?: string
           next_oil_change_km?: number | null
           next_revision?: string | null
           plate?: string
+          renavam?: string | null
           status?: string
           updated_at?: string
           weekly_rate?: number
