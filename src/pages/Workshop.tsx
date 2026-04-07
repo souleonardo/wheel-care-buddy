@@ -388,7 +388,7 @@ export default function Workshop() {
           )}
           <div className="space-y-3">
             {activeRevisions.map((rev) => {
-              const config = statusConfig[rev.status];
+              const config = statusConfig[rev.status] ?? fallbackStatusConfig;
               const StatusIcon = config.icon;
               return (
                 <div key={rev.id} className="bg-card rounded-xl border border-border/50 p-4">
