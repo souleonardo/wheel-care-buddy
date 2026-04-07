@@ -4,6 +4,7 @@ import { MobileLayout } from "@/components/MobileLayout";
 import { AddVehicleDialog } from "@/components/AddVehicleDialog";
 import { EditRenterDialog } from "@/components/EditRenterDialog";
 import { UploadCRLVButton } from "@/components/UploadCRLVButton";
+import { VehicleDetailsDialog } from "@/components/VehicleDetailsDialog";
 import { VehicleHistoryDialog } from "@/components/VehicleHistoryDialog";
 import { Car, User, Calendar, Trash2, ShieldCheck, ShieldAlert, ShieldX } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -119,6 +120,12 @@ export default function Vehicles() {
                       hasCrlv={!!vehicle.crlvUrl}
                       crlvUrl={vehicle.crlvUrl}
                       onUploaded={() => refreshVehicles()}
+                    />
+                    <VehicleDetailsDialog
+                      vehicleId={vehicle.id}
+                      vehiclePlate={vehicle.plate}
+                      vehicleModel={vehicle.model}
+                      onUpdated={refreshVehicles}
                     />
                     <VehicleHistoryDialog
                       vehicleId={vehicle.id}
