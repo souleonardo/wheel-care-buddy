@@ -129,4 +129,8 @@
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
   }
+
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
 }
