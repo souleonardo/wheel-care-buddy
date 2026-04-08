@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { MobileLayout } from "@/components/MobileLayout";
+import { AppLayout } from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -186,7 +186,7 @@ export default function Users() {
   };
 
   return (
-    <MobileLayout title="Usuários">
+    <AppLayout title="Usuários">
       <div className="p-4 space-y-4">
         <div className="flex items-center justify-between">
           <p className="text-sm text-muted-foreground">
@@ -434,6 +434,6 @@ export default function Users() {
         onOpenChange={(v) => { if (!v) setEditUser(null); }}
         onSaved={fetchUsers}
       />
-    </MobileLayout>
+    </AppLayout>
   );
 }

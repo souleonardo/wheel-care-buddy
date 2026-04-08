@@ -2,7 +2,7 @@ import { useFleet } from "@/context/FleetContext";
 import { useEffect, useState, useCallback } from "react";
 import { Clock, CheckCircle2, Wrench, CalendarDays, Car, Package, FileText, Droplets, AlertTriangle, Trash2 } from "lucide-react";
 import { DaySchedulePopover } from "@/components/DaySchedulePopover";
-import { MobileLayout } from "@/components/MobileLayout";
+import { AppLayout } from "@/components/AppLayout";
 import { AddSupplyUsageDialog } from "@/components/AddSupplyUsageDialog";
 import { OilChangeMileageDialog } from "@/components/OilChangeMileageDialog";
 import { MechanicNotesDialog } from "@/components/MechanicNotesDialog";
@@ -390,7 +390,7 @@ export default function Workshop() {
   });
 
   return (
-    <MobileLayout title="Oficina — Agendamentos">
+    <AppLayout title="Oficina — Agendamentos">
       <div className="p-4 space-y-6">
         {/* Summary */}
         <div className="flex gap-2">
@@ -687,6 +687,6 @@ export default function Workshop() {
           laborDialog.pendingContinue?.();
         }}
       />
-    </MobileLayout>
+    </AppLayout>
   );
 }

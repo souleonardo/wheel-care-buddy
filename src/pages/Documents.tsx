@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { MobileLayout } from "@/components/MobileLayout";
+import { AppLayout } from "@/components/AppLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { FileText, Download, Loader2, Car, ScrollText } from "lucide-react";
@@ -96,7 +96,7 @@ export default function Documents() {
   };
 
   return (
-    <MobileLayout title="Documentos">
+    <AppLayout title="Documentos">
       <div className="p-4 space-y-4">
         <p className="text-sm text-muted-foreground">
           Documentos dos veículos atribuídos a você.
@@ -188,6 +188,6 @@ export default function Documents() {
           </div>
         )}
       </div>
-    </MobileLayout>
+    </AppLayout>
   );
 }

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { MobileLayout } from "@/components/MobileLayout";
+import { AppLayout } from "@/components/AppLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Calendar, Car, User, Wrench, Download, FileSpreadsheet, DollarSign, Package, BarChart3 } from "lucide-react";
@@ -272,7 +272,7 @@ export default function Reports() {
   ];
 
   return (
-    <MobileLayout title="Relatórios">
+    <AppLayout title="Relatórios">
       <div className="p-4 space-y-6">
         {/* Filters */}
         <section className="bg-card rounded-xl border border-border/50 p-4 space-y-4">
@@ -367,6 +367,6 @@ export default function Reports() {
           </div>
         </section>
       </div>
-    </MobileLayout>
+    </AppLayout>
   );
 }

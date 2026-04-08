@@ -1,4 +1,4 @@
-import { MobileLayout } from "@/components/MobileLayout";
+import { AppLayout } from "@/components/AppLayout";
 import { AddRevisionDialog } from "@/components/AddRevisionDialog";
 import { useFleet } from "@/context/FleetContext";
 import { Clock, CheckCircle2, Wrench, CalendarDays } from "lucide-react";
@@ -17,7 +17,7 @@ export default function Revisions() {
   const { revisions } = useFleet();
 
   return (
-    <MobileLayout title="Revisões">
+    <AppLayout title="Revisões">
       <div className="p-4 space-y-4">
         <div className="flex gap-2">
           {(["scheduled", "in_progress", "completed"] as const).map((status) => {
@@ -74,6 +74,6 @@ export default function Revisions() {
           })}
         </div>
       </div>
-    </MobileLayout>
+    </AppLayout>
   );
 }
