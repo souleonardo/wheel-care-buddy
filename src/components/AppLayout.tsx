@@ -200,7 +200,7 @@ export function AppLayout({ children, title }: AppLayoutProps) {
         <DesktopSidebar tabs={tabs} />
         <div className="flex-1 flex flex-col min-w-0">
           <header className="h-14 flex items-center border-b border-border/50 px-4 bg-card/50 backdrop-blur-sm">
-            <SidebarTrigger className="mr-3" />
+            <SidebarTrigger className="mr-3 h-9 w-9 rounded-lg border border-border/50 bg-secondary/50 hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors" />
             <h1 className="text-lg font-semibold text-foreground">{title || "X Locações"}</h1>
           </header>
           <main className="flex-1 overflow-y-auto">{children}</main>
