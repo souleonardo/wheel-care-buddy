@@ -100,6 +100,9 @@ export default function Messaging() {
   const [saving, setSaving] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewBody, setPreviewBody] = useState("");
+  const [logs, setLogs] = useState<MessageLog[]>([]);
+  const [logsLoading, setLogsLoading] = useState(false);
+  const [statusFilter, setStatusFilter] = useState("all");
 
   useEffect(() => {
     fetchAll();
