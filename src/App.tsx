@@ -16,6 +16,7 @@ import Users from "./pages/Users";
 import Supplies from "./pages/Supplies";
 import Reports from "./pages/Reports";
 import Invoices from "./pages/Invoices";
+import Messaging from "./pages/Messaging";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
 
@@ -41,6 +42,7 @@ const App = () => (
               <Route path="/suprimentos" element={<ProtectedRoute allowedRoles={["admin", "mecanico"]}><Supplies /></ProtectedRoute>} />
               <Route path="/relatorios" element={<ProtectedRoute allowedRoles={["admin"]}><Reports /></ProtectedRoute>} />
               <Route path="/faturas" element={<ProtectedRoute allowedRoles={["admin", "locador"]}><Invoices /></ProtectedRoute>} />
+              <Route path="/mensageria" element={<ProtectedRoute allowedRoles={["admin"]}><Messaging /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </FleetProvider>
