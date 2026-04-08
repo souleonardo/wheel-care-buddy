@@ -50,7 +50,7 @@ Deno.serve(async (req) => {
     }
 
     // Parse and validate input
-    const { email, password, fullName, role, cpf, cnhNumber, cnhExpiryDate } = await req.json();
+    const { email, password, fullName, role, cpf, cnhNumber, cnhExpiryDate, phone } = await req.json();
     if (!email || !password || !fullName || !role) {
       return new Response(JSON.stringify({ error: "Campos obrigatórios: email, password, fullName, role" }), {
         status: 400,
@@ -98,13 +98,14 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Update profile with CPF/CNH if locador
-    if (role === "locador" && (cpf || cnhNumber || cnhExpiryDate)) {
-      const profileUpdate: Record<string, string> = {};
-      if (cpf) profileUpdate.cpf = cpf;
-      if (cnhNumber) profileUpdate.cnh_number = cnhNumber;
-      if (cnhExpiryDate) profileUpdate.cnh_expiry_date = cnhExpiryDate;
+    // Update profile with CPF/CNH/Phone
+    const profileUpdate: Record<string, string> = {};
+    if (cpf) profileUpdate.cpf = cpf;
+    if (cnhNumber) profileUpdate.cnh_number = cnhNumber;
+    if (cnhExpiryDate) profileUpdate.cnh_expiry_date = cnhExpiryDate;
+    if (phone) profileUpdate.phone = phone;
 
+    if (Object.keys(profileUpdate).length > 0) {
       await adminClient
         .from("profiles")
         .update(profileUpdate)

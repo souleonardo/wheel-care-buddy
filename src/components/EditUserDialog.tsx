@@ -18,6 +18,7 @@ interface UserData {
   cpf?: string | null;
   cnh_number?: string | null;
   cnh_expiry_date?: string | null;
+  phone?: string | null;
 }
 
 interface EditUserDialogProps {
@@ -35,6 +36,7 @@ export function EditUserDialog({ user, open, onOpenChange, onSaved }: EditUserDi
     cpf: "",
     cnhNumber: "",
     cnhExpiryDate: "",
+    phone: "",
     role: "" as AppRole,
   });
 
@@ -46,6 +48,7 @@ export function EditUserDialog({ user, open, onOpenChange, onSaved }: EditUserDi
         cpf: user.cpf ?? "",
         cnhNumber: user.cnh_number ?? "",
         cnhExpiryDate: user.cnh_expiry_date ?? "",
+        phone: user.phone ?? "",
         role: user.role ?? "locador",
       });
     }
@@ -64,6 +67,7 @@ export function EditUserDialog({ user, open, onOpenChange, onSaved }: EditUserDi
           cpf: form.cpf.trim() || null,
           cnh_number: form.cnhNumber.trim() || null,
           cnh_expiry_date: form.cnhExpiryDate || null,
+          phone: form.phone.trim() || null,
         })
         .eq("user_id", user.user_id);
 
@@ -170,6 +174,15 @@ export function EditUserDialog({ user, open, onOpenChange, onSaved }: EditUserDi
               value={form.cnhNumber}
               onChange={(e) => setForm((f) => ({ ...f, cnhNumber: e.target.value }))}
               placeholder="Número do registro"
+              maxLength={20}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label>WhatsApp</Label>
+            <Input
+              value={form.phone}
+              onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
+              placeholder="+5511999999999"
               maxLength={20}
             />
           </div>

@@ -26,6 +26,7 @@ interface UserWithRole {
   cpf?: string | null;
   cnh_number?: string | null;
   cnh_expiry_date?: string | null;
+  phone?: string | null;
 }
 
 const roleBadge: Record<AppRole, { label: string; variant: "default" | "secondary" | "outline" }> = {
@@ -47,6 +48,7 @@ export default function Users() {
     cpf: "",
     cnhNumber: "",
     cnhExpiryDate: "",
+    phone: "",
   });
 
   // Reset password state
@@ -62,7 +64,7 @@ export default function Users() {
     try {
       // Fetch profiles and roles
       const [profilesRes, rolesRes, authUsersRes] = await Promise.all([
-        supabase.from("profiles").select("user_id, full_name, cpf, cnh_number, cnh_expiry_date").order("created_at", { ascending: false }),
+        supabase.from("profiles").select("user_id, full_name, cpf, cnh_number, cnh_expiry_date, phone").order("created_at", { ascending: false }),
         supabase.from("user_roles").select("user_id, role"),
         supabase.functions.invoke("manage-users", { body: { action: "list" } }),
       ]);
@@ -90,6 +92,7 @@ export default function Users() {
           cpf: p.cpf,
           cnh_number: p.cnh_number,
           cnh_expiry_date: p.cnh_expiry_date,
+          phone: p.phone,
         }))
       );
     } catch (err) {
@@ -126,6 +129,7 @@ export default function Users() {
           password: form.password,
           fullName: form.fullName,
           role: form.role,
+          phone: form.phone.trim() || undefined,
           ...(form.role === "locador" ? {
             cpf: form.cpf.trim(),
             cnhNumber: form.cnhNumber.trim() || undefined,
@@ -138,7 +142,7 @@ export default function Users() {
       if (data?.error) throw new Error(data.error);
 
       toast.success(`Usuário ${form.fullName} criado como ${form.role === "locador" ? "Locatário" : "Mecânico"}!`);
-      setForm({ email: "", password: "", fullName: "", role: "locador", cpf: "", cnhNumber: "", cnhExpiryDate: "" });
+      setForm({ email: "", password: "", fullName: "", role: "locador", cpf: "", cnhNumber: "", cnhExpiryDate: "", phone: "" });
       setOpen(false);
       fetchUsers();
     } catch (err: any) {
@@ -280,6 +284,16 @@ export default function Users() {
                     </div>
                   </>
                 )}
+                <div className="space-y-1.5">
+                  <Label htmlFor="phone">WhatsApp</Label>
+                  <Input
+                    id="phone"
+                    placeholder="+5511999999999"
+                    value={form.phone}
+                    onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
+                    maxLength={20}
+                  />
+                </div>
                 <Button type="submit" className="w-full gradient-primary text-primary-foreground" disabled={loading}>
                   {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
                   Criar Usuário
@@ -353,6 +367,12 @@ export default function Users() {
                         <div className="flex items-center gap-1.5">
                           <span className="font-medium shrink-0">CNH:</span>
                           <span>{u.cnh_number}</span>
+                        </div>
+                      )}
+                      {u.phone && (
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-medium shrink-0">WhatsApp:</span>
+                          <span>{u.phone}</span>
                         </div>
                       )}
                       <div className="flex items-center gap-1.5">
