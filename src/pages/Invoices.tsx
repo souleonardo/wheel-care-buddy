@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { MobileLayout } from "@/components/MobileLayout";
+import { AppLayout } from "@/components/AppLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Receipt, ChevronDown, ChevronUp, CheckCircle2, Clock, AlertTriangle, Info, FileDown, Car, Plus, ShieldAlert, Upload } from "lucide-react";
@@ -488,7 +488,7 @@ export default function Invoices() {
 
   // ---- RENDER ----
   return (
-    <MobileLayout title="Faturas">
+    <AppLayout title="Faturas">
       <div className="p-4 space-y-4">
         {/* Summary cards */}
         <div className="flex gap-2">
@@ -822,6 +822,6 @@ export default function Invoices() {
           </div>
         </DialogContent>
       </Dialog>
-    </MobileLayout>
+    </AppLayout>
   );
 }

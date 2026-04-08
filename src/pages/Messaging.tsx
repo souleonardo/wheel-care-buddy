@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { MobileLayout } from "@/components/MobileLayout";
+import { AppLayout } from "@/components/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -287,16 +287,16 @@ export default function Messaging() {
 
   if (loading) {
     return (
-      <MobileLayout title="Mensageria">
+      <AppLayout title="Mensageria">
         <div className="flex items-center justify-center min-h-[50vh]">
           <div className="h-8 w-8 border-3 border-primary/30 border-t-primary rounded-full animate-spin" />
         </div>
-      </MobileLayout>
+      </AppLayout>
     );
   }
 
   return (
-    <MobileLayout title="Mensageria">
+    <AppLayout title="Mensageria">
       <div className="p-4 space-y-4">
         <div className="flex items-center justify-between">
           <div>
@@ -690,6 +690,6 @@ export default function Messaging() {
           </div>
         </DialogContent>
       </Dialog>
-    </MobileLayout>
+    </AppLayout>
   );
 }

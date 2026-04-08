@@ -1,4 +1,4 @@
-import { MobileLayout } from "@/components/MobileLayout";
+import { AppLayout } from "@/components/AppLayout";
 import { StatCard } from "@/components/StatCard";
 import { useFleet } from "@/context/FleetContext";
 import { useAuth } from "@/hooks/useAuth";
@@ -144,7 +144,7 @@ export default function Dashboard() {
   const nextRevisions = filteredRevisions.filter((r) => r.status !== "completed").slice(0, 3);
 
   return (
-    <MobileLayout title="FleetControl">
+    <AppLayout title="FleetControl">
       <div className="p-4 space-y-6">
         <div>
           <h2 className="text-2xl font-bold text-foreground">Olá, {fullName?.split(" ")[0] || "Admin"} 👋</h2>
@@ -309,6 +309,6 @@ export default function Dashboard() {
           )}
         </section>
       </div>
-    </MobileLayout>
+    </AppLayout>
   );
 }

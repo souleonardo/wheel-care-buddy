@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useFleet, Vehicle } from "@/context/FleetContext";
-import { MobileLayout } from "@/components/MobileLayout";
+import { AppLayout } from "@/components/AppLayout";
 import { AddVehicleDialog } from "@/components/AddVehicleDialog";
 import { EditRenterDialog } from "@/components/EditRenterDialog";
 import { UploadCRLVButton } from "@/components/UploadCRLVButton";
@@ -81,7 +81,7 @@ export default function Vehicles() {
   const { vehicles, removeVehicle, refreshVehicles } = useFleet();
 
   return (
-    <MobileLayout title="Veículos">
+    <AppLayout title="Veículos">
       <div className="p-4 space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex gap-2 flex-1">
@@ -206,6 +206,6 @@ export default function Vehicles() {
           })}
         </div>
       </div>
-    </MobileLayout>
+    </AppLayout>
   );
 }

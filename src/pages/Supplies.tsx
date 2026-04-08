@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Package, Plus, Minus, AlertTriangle, Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { MobileLayout } from "@/components/MobileLayout";
+import { AppLayout } from "@/components/AppLayout";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -115,7 +115,7 @@ export default function Supplies() {
   const lowStock = supplies.filter((s) => s.quantity <= s.min_quantity);
 
   return (
-    <MobileLayout title="Estoque de Suprimentos">
+    <AppLayout title="Estoque de Suprimentos">
       <div className="p-4 space-y-4">
         {/* Alert */}
         {lowStock.length > 0 && (
@@ -343,6 +343,6 @@ export default function Supplies() {
           </DialogContent>
         </Dialog>
       </div>
-    </MobileLayout>
+    </AppLayout>
   );
 }
