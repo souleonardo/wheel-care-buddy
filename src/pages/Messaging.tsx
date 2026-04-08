@@ -44,6 +44,29 @@ interface Config {
   is_sandbox: boolean;
 }
 
+interface MessageLog {
+  id: string;
+  renter_id: string;
+  journey_type: string;
+  phone: string;
+  message_body: string;
+  twilio_sid: string | null;
+  status: string;
+  error_message: string | null;
+  sent_at: string;
+  status_updated_at: string;
+  renter_name?: string;
+}
+
+const statusConfig: Record<string, { label: string; icon: typeof Check; color: string }> = {
+  queued: { label: "Na fila", icon: Clock, color: "text-muted-foreground" },
+  sent: { label: "Enviada", icon: Send, color: "text-blue-500" },
+  delivered: { label: "Entregue", icon: Check, color: "text-green-500" },
+  read: { label: "Lida", icon: CheckCheck, color: "text-green-600" },
+  failed: { label: "Falhou", icon: XCircle, color: "text-destructive" },
+  undelivered: { label: "Não entregue", icon: XCircle, color: "text-orange-500" },
+};
+
 const journeyLabels: Record<string, { label: string; description: string; icon: typeof Bell }> = {
   reminder_d1: {
     label: "Lembrete D-1",
