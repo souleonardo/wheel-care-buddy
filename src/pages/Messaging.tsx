@@ -121,6 +121,33 @@ export default function Messaging() {
     setLoading(false);
   }
 
+  async function fetchLogs() {
+    setLogsLoading(true);
+    let query = supabase
+      .from("whatsapp_message_logs")
+      .select("*")
+      .order("sent_at", { ascending: false })
+      .limit(100);
+
+    if (statusFilter !== "all") {
+      query = query.eq("status", statusFilter);
+    }
+
+    const { data } = await query;
+    if (data) {
+      // Fetch renter names
+      const renterIds = [...new Set(data.map((l) => l.renter_id))];
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("user_id, full_name")
+        .in("user_id", renterIds);
+
+      const nameMap = new Map(profiles?.map((p) => [p.user_id, p.full_name]) || []);
+      setLogs(data.map((l) => ({ ...l, renter_name: nameMap.get(l.renter_id) || "Desconhecido" })));
+    }
+    setLogsLoading(false);
+  }
+
   function updateJourney(id: string, field: keyof Journey, value: unknown) {
     setJourneys((prev) =>
       prev.map((j) => (j.id === id ? { ...j, [field]: value } : j))
