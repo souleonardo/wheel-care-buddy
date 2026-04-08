@@ -211,6 +211,9 @@ Deno.serve(async (req) => {
             .replace("{vencimento}", dueDateFormatted)
             .replace("{placa}", vehicle?.plate || "N/A");
 
+          // Build status callback URL
+          const statusCallbackUrl = `${supabaseUrl}/functions/v1/whatsapp-status-webhook`;
+
           // Send via Twilio gateway
           const toNumber = `whatsapp:${profile.phone}`;
           const response = await fetch(`${GATEWAY_URL}/Messages.json`, {
@@ -224,15 +227,34 @@ Deno.serve(async (req) => {
               To: toNumber,
               From: config.sender_number,
               Body: messageBody,
+              StatusCallback: statusCallbackUrl,
             }),
           });
 
           const result = await response.json();
           if (!response.ok) {
+            // Log failed message
+            await adminClient.from("whatsapp_message_logs").insert({
+              renter_id: renterId,
+              journey_type: journey.journey_type,
+              phone: profile.phone,
+              message_body: messageBody,
+              status: "failed",
+              error_message: JSON.stringify(result),
+            });
             errors.push(
               `Twilio error for ${profile.full_name}: ${JSON.stringify(result)}`
             );
           } else {
+            // Log successful message
+            await adminClient.from("whatsapp_message_logs").insert({
+              renter_id: renterId,
+              journey_type: journey.journey_type,
+              phone: profile.phone,
+              message_body: messageBody,
+              twilio_sid: result.sid,
+              status: result.status || "queued",
+            });
             totalSent++;
             console.log(
               `Message sent to ${profile.full_name} (${toNumber}): SID ${result.sid}`
