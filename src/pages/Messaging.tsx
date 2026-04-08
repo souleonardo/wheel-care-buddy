@@ -247,10 +247,11 @@ export default function Messaging() {
           </Button>
         </div>
 
-        <Tabs defaultValue="journeys">
+        <Tabs defaultValue="journeys" onValueChange={(v) => { if (v === "history") fetchLogs(); }}>
           <TabsList className="w-full">
             <TabsTrigger value="journeys" className="flex-1">Jornadas</TabsTrigger>
             <TabsTrigger value="templates" className="flex-1">Templates</TabsTrigger>
+            <TabsTrigger value="history" className="flex-1">Histórico</TabsTrigger>
             <TabsTrigger value="config" className="flex-1">Config</TabsTrigger>
           </TabsList>
 
@@ -423,6 +424,79 @@ export default function Messaging() {
                   </div>
                 </CardContent>
               </Card>
+            )}
+          </TabsContent>
+
+          {/* HISTÓRICO */}
+          <TabsContent value="history" className="space-y-3 mt-3">
+            <div className="flex items-center gap-2">
+              <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v)}>
+                <SelectTrigger className="w-[140px]">
+                  <SelectValue placeholder="Filtrar status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="queued">Na fila</SelectItem>
+                  <SelectItem value="sent">Enviada</SelectItem>
+                  <SelectItem value="delivered">Entregue</SelectItem>
+                  <SelectItem value="read">Lida</SelectItem>
+                  <SelectItem value="failed">Falhou</SelectItem>
+                  <SelectItem value="undelivered">Não entregue</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button variant="outline" size="sm" onClick={fetchLogs} disabled={logsLoading}>
+                <RefreshCw className={`h-4 w-4 ${logsLoading ? "animate-spin" : ""}`} />
+              </Button>
+            </div>
+
+            {logsLoading ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : logs.length === 0 ? (
+              <Card>
+                <CardContent className="py-8 text-center text-muted-foreground">
+                  <History className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">Nenhuma mensagem encontrada</p>
+                </CardContent>
+              </Card>
+            ) : (
+              logs.map((log) => {
+                const st = statusConfig[log.status] || statusConfig.queued;
+                const StatusIcon = st.icon;
+                const journeyMeta = journeyLabels[log.journey_type];
+                return (
+                  <Card key={log.id}>
+                    <CardContent className="p-3 space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium">{log.renter_name}</span>
+                        <div className="flex items-center gap-1.5">
+                          <StatusIcon className={`h-3.5 w-3.5 ${st.color}`} />
+                          <span className={`text-xs font-medium ${st.color}`}>{st.label}</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        {journeyMeta && (
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                            {journeyMeta.label}
+                          </Badge>
+                        )}
+                        <span>{log.phone}</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground line-clamp-2">{log.message_body}</p>
+                      <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                        <span>Enviado: {format(new Date(log.sent_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}</span>
+                        {log.status_updated_at !== log.sent_at && (
+                          <span>Atualizado: {format(new Date(log.status_updated_at), "HH:mm")}</span>
+                        )}
+                      </div>
+                      {log.error_message && (
+                        <p className="text-[10px] text-destructive bg-destructive/10 rounded p-1.5">{log.error_message}</p>
+                      )}
+                    </CardContent>
+                  </Card>
+                );
+              })
             )}
           </TabsContent>
         </Tabs>
