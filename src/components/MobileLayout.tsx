@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Car, Wrench, LogOut, User, FileText, Users, Package, BarChart3, Receipt } from "lucide-react";
+import { LayoutDashboard, Car, Wrench, LogOut, User, FileText, Users, Package, BarChart3, Receipt, MessageSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth, AppRole } from "@/hooks/useAuth";
 
@@ -22,6 +22,7 @@ const allTabs: TabDef[] = [
   { label: "Oficina", icon: Wrench, path: "/oficina", roles: ["admin", "mecanico"] },
   { label: "Estoque", icon: Package, path: "/suprimentos", roles: ["admin", "mecanico"] },
   { label: "Relatórios", icon: BarChart3, path: "/relatorios", roles: ["admin"] },
+  { label: "Mensageria", icon: MessageSquare, path: "/mensageria", roles: ["admin"] },
 ];
 
 interface MobileLayoutProps {

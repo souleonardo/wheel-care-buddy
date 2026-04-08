@@ -236,6 +236,7 @@ export type Database = {
           created_at: string
           full_name: string
           id: string
+          phone: string | null
           updated_at: string
           user_id: string
         }
@@ -246,6 +247,7 @@ export type Database = {
           created_at?: string
           full_name: string
           id?: string
+          phone?: string | null
           updated_at?: string
           user_id: string
         }
@@ -256,6 +258,7 @@ export type Database = {
           created_at?: string
           full_name?: string
           id?: string
+          phone?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -632,6 +635,101 @@ export type Database = {
         }
         Relationships: []
       }
+      whatsapp_config: {
+        Row: {
+          created_at: string
+          id: string
+          is_sandbox: boolean
+          sender_number: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_sandbox?: boolean
+          sender_number?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_sandbox?: boolean
+          sender_number?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      whatsapp_journeys: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          journey_type: Database["public"]["Enums"]["whatsapp_journey_type"]
+          max_retries: number
+          retry_interval_days: number
+          send_hour: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          journey_type: Database["public"]["Enums"]["whatsapp_journey_type"]
+          max_retries?: number
+          retry_interval_days?: number
+          send_hour?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          journey_type?: Database["public"]["Enums"]["whatsapp_journey_type"]
+          max_retries?: number
+          retry_interval_days?: number
+          send_hour?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      whatsapp_templates: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          journey_id: string
+          template_body: string
+          template_name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          journey_id: string
+          template_body: string
+          template_name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          journey_id?: string
+          template_body?: string
+          template_name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_templates_journey_id_fkey"
+            columns: ["journey_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_journeys"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -651,6 +749,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "locador" | "mecanico"
+      whatsapp_journey_type: "reminder_d1" | "due_date" | "overdue"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -779,6 +878,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "locador", "mecanico"],
+      whatsapp_journey_type: ["reminder_d1", "due_date", "overdue"],
     },
   },
 } as const
