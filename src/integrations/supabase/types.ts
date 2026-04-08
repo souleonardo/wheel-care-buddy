@@ -692,6 +692,48 @@ export type Database = {
         }
         Relationships: []
       }
+      whatsapp_message_logs: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          id: string
+          journey_type: string
+          message_body: string
+          phone: string
+          renter_id: string
+          sent_at: string
+          status: string
+          status_updated_at: string
+          twilio_sid: string | null
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          journey_type: string
+          message_body: string
+          phone: string
+          renter_id: string
+          sent_at?: string
+          status?: string
+          status_updated_at?: string
+          twilio_sid?: string | null
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          journey_type?: string
+          message_body?: string
+          phone?: string
+          renter_id?: string
+          sent_at?: string
+          status?: string
+          status_updated_at?: string
+          twilio_sid?: string | null
+        }
+        Relationships: []
+      }
       whatsapp_templates: {
         Row: {
           created_at: string
