@@ -736,28 +736,46 @@ export type Database = {
       }
       whatsapp_templates: {
         Row: {
+          category: string
           created_at: string
           id: string
           is_active: boolean
           journey_id: string
+          language: string
+          meta_status: string
+          meta_template_sid: string | null
+          rejection_reason: string | null
+          submitted_at: string | null
           template_body: string
           template_name: string
           updated_at: string
         }
         Insert: {
+          category?: string
           created_at?: string
           id?: string
           is_active?: boolean
           journey_id: string
+          language?: string
+          meta_status?: string
+          meta_template_sid?: string | null
+          rejection_reason?: string | null
+          submitted_at?: string | null
           template_body: string
           template_name: string
           updated_at?: string
         }
         Update: {
+          category?: string
           created_at?: string
           id?: string
           is_active?: boolean
           journey_id?: string
+          language?: string
+          meta_status?: string
+          meta_template_sid?: string | null
+          rejection_reason?: string | null
+          submitted_at?: string | null
           template_body?: string
           template_name?: string
           updated_at?: string

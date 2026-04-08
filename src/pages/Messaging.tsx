@@ -10,12 +10,13 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { MessageSquare, Clock, Bell, AlertTriangle, Settings, Save, Eye, History, RefreshCw, CheckCheck, Check, Send, XCircle, Loader2 } from "lucide-react";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
+  MessageSquare, Clock, Bell, AlertTriangle, Settings, Save, Eye, History,
+  RefreshCw, CheckCheck, Check, Send, XCircle, Loader2, Upload, FileCheck,
+  Trash2, AlertCircle, ShieldCheck,
+} from "lucide-react";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format } from "date-fns";
@@ -36,6 +37,12 @@ interface Template {
   template_name: string;
   template_body: string;
   is_active: boolean;
+  meta_status: string;
+  meta_template_sid: string | null;
+  rejection_reason: string | null;
+  submitted_at: string | null;
+  category: string;
+  language: string;
 }
 
 interface Config {
@@ -65,6 +72,14 @@ const statusConfig: Record<string, { label: string; icon: typeof Check; color: s
   read: { label: "Lida", icon: CheckCheck, color: "text-green-600" },
   failed: { label: "Falhou", icon: XCircle, color: "text-destructive" },
   undelivered: { label: "Não entregue", icon: XCircle, color: "text-orange-500" },
+};
+
+const metaStatusConfig: Record<string, { label: string; icon: typeof Check; variant: "default" | "secondary" | "destructive" | "outline" }> = {
+  draft: { label: "Rascunho", icon: AlertCircle, variant: "secondary" },
+  pending: { label: "Em análise", icon: Clock, variant: "outline" },
+  approved: { label: "Aprovado", icon: ShieldCheck, variant: "default" },
+  rejected: { label: "Rejeitado", icon: XCircle, variant: "destructive" },
+  failed: { label: "Falha", icon: XCircle, variant: "destructive" },
 };
 
 const journeyLabels: Record<string, { label: string; description: string; icon: typeof Bell }> = {
@@ -103,6 +118,7 @@ export default function Messaging() {
   const [logs, setLogs] = useState<MessageLog[]>([]);
   const [logsLoading, setLogsLoading] = useState(false);
   const [statusFilter, setStatusFilter] = useState("all");
+  const [submitting, setSubmitting] = useState<string | null>(null);
 
   useEffect(() => {
     fetchAll();
@@ -116,7 +132,7 @@ export default function Messaging() {
       supabase.from("whatsapp_config").select("*").limit(1).single(),
     ]);
     if (jRes.data) setJourneys(jRes.data);
-    if (tRes.data) setTemplates(tRes.data);
+    if (tRes.data) setTemplates(tRes.data as unknown as Template[]);
     if (cRes.data) setConfig(cRes.data);
     setLoading(false);
   }
@@ -135,7 +151,6 @@ export default function Messaging() {
 
     const { data } = await query;
     if (data) {
-      // Fetch renter names
       const renterIds = [...new Set(data.map((l) => l.renter_id))];
       const { data: profiles } = await supabase
         .from("profiles")
@@ -163,7 +178,6 @@ export default function Messaging() {
   async function saveAll() {
     setSaving(true);
     try {
-      // Save journeys
       for (const j of journeys) {
         const { error } = await supabase
           .from("whatsapp_journeys")
@@ -177,7 +191,6 @@ export default function Messaging() {
         if (error) throw error;
       }
 
-      // Save templates
       for (const t of templates) {
         const { error } = await supabase
           .from("whatsapp_templates")
@@ -185,12 +198,13 @@ export default function Messaging() {
             template_name: t.template_name,
             template_body: t.template_body,
             is_active: t.is_active,
-          })
+            category: t.category,
+            language: t.language,
+          } as any)
           .eq("id", t.id);
         if (error) throw error;
       }
 
-      // Save config
       if (config) {
         const { error } = await supabase
           .from("whatsapp_config")
@@ -207,6 +221,57 @@ export default function Messaging() {
       toast.error("Erro ao salvar: " + e.message);
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function submitToMeta(templateId: string) {
+    setSubmitting(templateId);
+    try {
+      const { data, error } = await supabase.functions.invoke("whatsapp-templates", {
+        body: { action: "submit", templateId },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      toast.success("Template submetido para aprovação da Meta!");
+      await fetchAll();
+    } catch (e: any) {
+      toast.error("Erro ao submeter: " + e.message);
+    } finally {
+      setSubmitting(null);
+    }
+  }
+
+  async function checkMetaStatus(templateId: string) {
+    setSubmitting(templateId);
+    try {
+      const { data, error } = await supabase.functions.invoke("whatsapp-templates", {
+        body: { action: "check_status", templateId },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      toast.success(`Status: ${data.status}`);
+      await fetchAll();
+    } catch (e: any) {
+      toast.error("Erro ao verificar: " + e.message);
+    } finally {
+      setSubmitting(null);
+    }
+  }
+
+  async function resetTemplate(templateId: string) {
+    setSubmitting(templateId);
+    try {
+      const { data, error } = await supabase.functions.invoke("whatsapp-templates", {
+        body: { action: "delete", templateId },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      toast.success("Template resetado para rascunho");
+      await fetchAll();
+    } catch (e: any) {
+      toast.error("Erro: " + e.message);
+    } finally {
+      setSubmitting(null);
     }
   }
 
@@ -291,7 +356,6 @@ export default function Messaging() {
                         <span className="text-xs text-muted-foreground">h (0-23)</span>
                       </div>
                     </div>
-
                     {journey.journey_type === "overdue" && (
                       <>
                         <div>
@@ -341,12 +405,29 @@ export default function Messaging() {
 
             {templates.map((template) => {
               const journey = journeys.find((j) => j.id === template.journey_id);
-              const meta = journey ? journeyLabels[journey.journey_type] : null;
+              const journeyMeta = journey ? journeyLabels[journey.journey_type] : null;
+              const metaSt = metaStatusConfig[template.meta_status] || metaStatusConfig.draft;
+              const MetaIcon = metaSt.icon;
+              const isSubmitting = submitting === template.id;
+
               return (
                 <Card key={template.id}>
                   <CardHeader className="pb-3">
                     <div className="flex items-center justify-between">
-                      <CardTitle className="text-base">{meta?.label || template.template_name}</CardTitle>
+                      <div className="space-y-1">
+                        <CardTitle className="text-base">{journeyMeta?.label || template.template_name}</CardTitle>
+                        <div className="flex items-center gap-2">
+                          <Badge variant={metaSt.variant} className="text-[10px] gap-1">
+                            <MetaIcon className="h-3 w-3" />
+                            {metaSt.label}
+                          </Badge>
+                          {template.submitted_at && (
+                            <span className="text-[10px] text-muted-foreground">
+                              {format(new Date(template.submitted_at), "dd/MM/yyyy", { locale: ptBR })}
+                            </span>
+                          )}
+                        </div>
+                      </div>
                       <div className="flex items-center gap-2">
                         <Button
                           variant="ghost"
@@ -372,6 +453,40 @@ export default function Messaging() {
                         className="mt-1"
                       />
                     </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <Label className="text-xs">Categoria</Label>
+                        <Select
+                          value={template.category}
+                          onValueChange={(v) => updateTemplate(template.id, "category", v)}
+                        >
+                          <SelectTrigger className="mt-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="utility">Utilidade</SelectItem>
+                            <SelectItem value="marketing">Marketing</SelectItem>
+                            <SelectItem value="authentication">Autenticação</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-xs">Idioma</Label>
+                        <Select
+                          value={template.language}
+                          onValueChange={(v) => updateTemplate(template.id, "language", v)}
+                        >
+                          <SelectTrigger className="mt-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="pt_BR">Português (BR)</SelectItem>
+                            <SelectItem value="en_US">English (US)</SelectItem>
+                            <SelectItem value="es">Español</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
                     <div>
                       <Label className="text-xs">Mensagem</Label>
                       <Textarea
@@ -381,6 +496,65 @@ export default function Messaging() {
                         className="mt-1 font-mono text-xs"
                       />
                     </div>
+
+                    {template.rejection_reason && (
+                      <div className="bg-destructive/10 text-destructive text-xs rounded-md p-2.5 flex gap-2">
+                        <XCircle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                        <span>{template.rejection_reason}</span>
+                      </div>
+                    )}
+
+                    {/* Meta actions */}
+                    <div className="flex gap-2 pt-1">
+                      {(template.meta_status === "draft" || template.meta_status === "rejected" || template.meta_status === "failed") && (
+                        <Button
+                          size="sm"
+                          onClick={() => submitToMeta(template.id)}
+                          disabled={isSubmitting}
+                          className="flex-1"
+                        >
+                          {isSubmitting ? (
+                            <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
+                          ) : (
+                            <Upload className="h-3.5 w-3.5 mr-1" />
+                          )}
+                          Submeter à Meta
+                        </Button>
+                      )}
+                      {(template.meta_status === "pending") && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => checkMetaStatus(template.id)}
+                          disabled={isSubmitting}
+                          className="flex-1"
+                        >
+                          {isSubmitting ? (
+                            <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
+                          ) : (
+                            <FileCheck className="h-3.5 w-3.5 mr-1" />
+                          )}
+                          Verificar Status
+                        </Button>
+                      )}
+                      {template.meta_template_sid && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => resetTemplate(template.id)}
+                          disabled={isSubmitting}
+                          className="text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      )}
+                    </div>
+
+                    {template.meta_template_sid && (
+                      <p className="text-[10px] text-muted-foreground font-mono">
+                        SID: {template.meta_template_sid}
+                      </p>
+                    )}
                   </CardContent>
                 </Card>
               );
